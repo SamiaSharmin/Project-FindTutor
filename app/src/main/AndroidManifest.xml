@@ -12,6 +12,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ProjectFindTutor">
         <activity
+            android:name=".StudentRegisterActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TutorRegisterActivity"
+            android:exported="false" />
+        <activity
+            android:name=".RoleRegisterActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
