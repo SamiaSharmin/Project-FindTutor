@@ -177,7 +177,8 @@ class CreatePostActivity : AppCompatActivity() {
             override fun onComplete(error: DatabaseError?, committed: Boolean, currentData: DataSnapshot?) {
                 if(committed && currentData != null){
                     val jobId = currentData.getValue(Int::class.java) ?: 0
-                    savePost(jobId, userId, title, location, studentClass, time, subjects, salary, days, studentGender, tutorGender, description)
+                    val postedDate = getCurrentDate()
+                    savePost(jobId, userId, title, location, studentClass, time, subjects, salary, days, studentGender, tutorGender, description,postedDate)
                 }else{
                     Toast.makeText(this@CreatePostActivity, "Error: ${error?.message}", Toast.LENGTH_SHORT).show()
                 }
@@ -187,8 +188,8 @@ class CreatePostActivity : AppCompatActivity() {
 
     }
 
-    fun savePost(jobId: Int, userId: String, title: String, location: String, studentClass: String, time: String, subjects: String, salary: Int, days: Int, studentGender: String, tutorGender: String, description: String=""){
-        val post = Post(jobId, userId, title, location, studentClass, time, subjects, salary, days, studentGender, tutorGender, description)
+    fun savePost(jobId: Int, userId: String, title: String, location: String, studentClass: String, time: String, subjects: String, salary: Int, days: Int, studentGender: String, tutorGender: String, description: String="",postedDate: String){
+        val post = Post(jobId, userId, title, location, studentClass, time, subjects, salary, days, studentGender, tutorGender, description,postedDate)
         db.child("Posts").child(jobId.toString()).setValue(post)
             .addOnSuccessListener {
                 Toast.makeText(this, "Post created successfully! Job ID: $jobId", Toast.LENGTH_SHORT).show()
@@ -198,4 +199,10 @@ class CreatePostActivity : AppCompatActivity() {
                 Toast.makeText(this, "Error: ${it.message}", Toast.LENGTH_SHORT).show()
             }
     }
+
+    fun getCurrentDate(): String{
+        val date = java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault())
+        return date.format(java.util.Date())
+    }
+
 }

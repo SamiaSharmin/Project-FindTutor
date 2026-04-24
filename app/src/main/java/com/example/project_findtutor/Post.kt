@@ -12,5 +12,6 @@ data class Post(
     val days: Int = 0,
     val studentGender: String = "",
     val tutorGender: String = "",
-    val description: String = ""
+    val description: String = "",
+    val postedDate: String =""
 )
