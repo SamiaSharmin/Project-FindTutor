@@ -84,7 +84,7 @@ class StudentRegisterActivity : AppCompatActivity() {
 
             auth.createUserWithEmailAndPassword(emailStr, passwordStr).addOnSuccessListener {
                 val userId = it.user!!.uid
-                val student = Student(userId, nameStr, emailStr, phoneNumberStr)
+                val student = Student(userId, nameStr, emailStr, phoneNumberStr,0.0)
                 val user = User(userId, nameStr, emailStr, "student")
 
                 db.child("Users").child(userId).setValue(user)

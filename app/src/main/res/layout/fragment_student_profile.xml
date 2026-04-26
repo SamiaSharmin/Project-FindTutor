@@ -3,8 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F8F9FA"
-    tools:context=".TutorProfileFragment">
+    tools:context=".StudentProfileFragment">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -77,7 +76,6 @@
             android:textSize="14sp"
             android:textStyle="bold"
             android:textAllCaps="true"
-            android:layout_marginTop="15dp"
             android:background="#830303"/>
 
         <Button
@@ -89,8 +87,11 @@
             android:textStyle="bold"
             android:textAllCaps="true"
             android:backgroundTint="#D94572"
-            android:layout_marginTop="13dp"
-            android:textColor="#FFFFFF"/>
+            android:layout_marginTop="13dp"/>
+
+
+
+
 
     </LinearLayout>
 

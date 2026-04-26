@@ -44,19 +44,23 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
             return
         }
 
-        db.child("Users").child("Tutors").child(userId)
+        db.child("Tutors").child(userId)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
 
                     if(snapshot.exists()){
                         val name = snapshot.child("name").value.toString()?:"N/A"
-                        val rating = snapshot.child("rating").value.toString()?:"0.0"
+                        val rating = snapshot.child("rating").value.toString()
                         val qualification = snapshot.child("qualification").value.toString()?:"N/A"
 
                         tvName.text = name
                         tvRating.text = rating
                         tvQualification.text = qualification
 
+                    }else{
+                        if(isAdded){
+                            Toast.makeText(requireContext(),"Tutor id not found", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
 

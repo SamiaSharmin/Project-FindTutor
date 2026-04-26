@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -18,12 +19,9 @@ import com.google.firebase.database.ValueEventListener
 
 class StudentDashboard : AppCompatActivity() {
 
+    lateinit var bottomNav: BottomNavigationView
     lateinit var auth: FirebaseAuth
     lateinit var db: DatabaseReference
-    lateinit var tvStudentName: TextView
-    lateinit var btnPreviousPost: Button
-    lateinit var btnCreatePost: Button
-    lateinit var btnLogout: ImageButton
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -36,48 +34,35 @@ class StudentDashboard : AppCompatActivity() {
 
         auth = FirebaseAuth.getInstance()
         db = FirebaseDatabase.getInstance().reference
-        tvStudentName = findViewById<TextView>(R.id.tvStudentName)
-        btnPreviousPost = findViewById<Button>(R.id.btnPreviousPost)
-        btnCreatePost = findViewById<Button>(R.id.btnCreatePost)
-        btnLogout = findViewById<ImageButton>(R.id.btnLogout)
+        bottomNav = findViewById<BottomNavigationView>(R.id.bottomNavigation)
 
-        loadStudentData()
+        loadFragment(StudentDashboardFragment())
 
-        btnCreatePost.setOnClickListener {
-            val intent = Intent(this, CreatePostActivity::class.java)
-            startActivity(intent)
+        bottomNav.setOnItemSelectedListener {
+            when(it.itemId){
+                R.id.nav_home -> {
+                    loadFragment(StudentDashboardFragment())
+                    true
+                }
+                R.id.nav_addPost-> {
+                    startActivity(Intent(this, CreatePostActivity::class.java))
+                    true
+                }
+                R.id.nav_notification -> {
+                    loadFragment(StudentNotificationFragment())
+                    true
+                }
+                R.id.nav_profile -> {
+                    loadFragment(StudentProfileFragment())
+                    true
+                }
+                else -> false
+            }
         }
 
-        btnLogout.setOnClickListener {
-            auth.signOut()
-            val intent = Intent(this, MainActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            finish()
-        }
     }
 
-    fun loadStudentData(){
-
-        val user = auth.currentUser
-        if(user!=null){
-            val userId = user.uid
-            db.child("Students").child(userId)
-                .addListenerForSingleValueEvent(object : ValueEventListener {
-                    override fun onDataChange(snapshot: DataSnapshot) {
-                        if(snapshot.exists()){
-                            val name = snapshot.child("name").value.toString()
-                            tvStudentName.text = "Welcome, $name"
-                        }else{
-                            tvStudentName.text = "Welcome, Student"
-
-                        }}
-                    override fun onCancelled(error: DatabaseError) {
-                        tvStudentName.text = "Error loading name"
-
-                    }
-                })
-        }
-
+    fun loadFragment(fragment: androidx.fragment.app.Fragment) {
+        supportFragmentManager.beginTransaction().replace(R.id.fragmentContainer, fragment).commit()
     }
 }

@@ -14,7 +14,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
 
-class TutorProfileFragment : Fragment(R.layout.fragment_tutor_profile) {
+class StudentProfileFragment : Fragment(R.layout.fragment_student_profile) {
 
     lateinit var auth: FirebaseAuth
     lateinit var db: DatabaseReference
@@ -26,6 +26,7 @@ class TutorProfileFragment : Fragment(R.layout.fragment_tutor_profile) {
     lateinit var btnDeleteAccount: Button
     lateinit var btnLogout: Button
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {}
@@ -36,7 +37,6 @@ class TutorProfileFragment : Fragment(R.layout.fragment_tutor_profile) {
 
         auth = FirebaseAuth.getInstance()
         db = FirebaseDatabase.getInstance().reference
-
         tvName = view.findViewById(R.id.tvName)
         tvEmail = view.findViewById(R.id.tvEmail)
         tvPhoneNumber = view.findViewById(R.id.tvPhoneNumber)
@@ -71,6 +71,7 @@ class TutorProfileFragment : Fragment(R.layout.fragment_tutor_profile) {
             startActivity(Intent(requireContext(), MainActivity::class.java))
             requireActivity().finish()
         }
+
     }
 
     fun loadProfile(){
@@ -80,7 +81,7 @@ class TutorProfileFragment : Fragment(R.layout.fragment_tutor_profile) {
             return
         }
 
-        db.child("Tutors").child(userId)
+        db.child("Students").child(userId)
             .addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
                     if (snapshot.exists()) {
@@ -93,7 +94,7 @@ class TutorProfileFragment : Fragment(R.layout.fragment_tutor_profile) {
                         tvPhoneNumber.text = "Phone Number: $phoneNumber"
                     } else {
                         if (isAdded) {
-                            Toast.makeText(requireContext(),"Tutor id not found", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(requireContext(),"Student id not found", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -112,7 +113,7 @@ class TutorProfileFragment : Fragment(R.layout.fragment_tutor_profile) {
             return
         }
 
-        db.child("Tutors").child(userId).removeValue()
+        db.child("Students").child(userId).removeValue()
         db.child("Users").child(userId).removeValue()
 
         user.delete().addOnSuccessListener {
