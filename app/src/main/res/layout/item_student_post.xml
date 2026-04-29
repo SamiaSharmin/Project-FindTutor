@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     app:cardCornerRadius="16dp"
-    app:cardBackgroundColor="#8D9ACA"
+    app:cardBackgroundColor="#CC6D7AA9"
     app:cardElevation="2dp"
     android:layout_marginBottom="16dp">
 
@@ -47,24 +47,43 @@
                     android:layout_marginBottom="4dp"/>
 
                 <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Location"
+                    android:textColor="#000000"
+                    android:textSize="14sp"
+                    android:textStyle="bold"/>
+
+
+                <TextView
                     android:id="@+id/tvLocation"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Location\nDhanmondi,Dhaka"
-                    android:textColor="#000000"
+                    android:text="Dhanmondi,Dhaka"
+                    android:textColor="#0A4D90"
                     android:textSize="14sp"
                     android:textStyle="bold"
                     android:layout_marginBottom="4dp"/>
 
                 <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Salary"
+                    android:textColor="#000000"
+                    android:textSize="14sp"
+                    android:textStyle="bold"/>
+
+
+                <TextView
                     android:id="@+id/tvSalary"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Salary\n4000BDT"
-                    android:textColor="#000000"
+                    android:text="4000BDT"
+                    android:textColor="#0A4D90"
                     android:textSize="14sp"
                     android:textStyle="bold"
                     android:layout_marginBottom="4dp"/>
+
 
                 <TextView
                     android:id="@+id/tvPreferredTutor"
@@ -84,21 +103,38 @@
                 android:orientation="vertical">
 
                 <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Posted Date"
+                    android:textColor="#000000"
+                    android:textSize="14sp"
+                    android:textStyle="bold"/>
+
+                <TextView
                     android:id="@+id/tvPostedDate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Posted Date\n11 May,2026 2:00pm"
-                    android:textColor="#000000"
+                    android:text="11 May,2026 2:00pm"
+                    android:textColor="#0A4D90"
                     android:textSize="14sp"
                     android:textStyle="bold"
                     android:layout_marginBottom="4dp"/>
 
                 <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Subjects"
+                    android:textColor="#000000"
+                    android:textSize="14sp"
+                    android:textStyle="bold"/>
+
+
+                <TextView
                     android:id="@+id/tvSubjects"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Subjects\nEnglish,Bangla,xxxxxx"
-                    android:textColor="#000000"
+                    android:text="English,Bangla,xxxxxx"
+                    android:textColor="#0A4D90"
                     android:textSize="14sp"
                     android:textStyle="bold"
                     android:layout_marginBottom="4dp"/>
