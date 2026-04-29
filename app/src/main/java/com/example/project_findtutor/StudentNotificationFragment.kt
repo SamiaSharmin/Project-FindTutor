@@ -1,59 +1,170 @@
 package com.example.project_findtutor
 
+import android.app.AlertDialog
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.*
+import android.widget.Toast
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
+import java.util.Calendar
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
+class StudentNotificationFragment : Fragment(R.layout.fragment_student_notification) {
 
-/**
- * A simple [Fragment] subclass.
- * Use the [StudentNotificationFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
-class StudentNotificationFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
+    lateinit var auth: FirebaseAuth
+    lateinit var db: DatabaseReference
+    lateinit var recyclerView: RecyclerView
+    lateinit var tvEmpty: TextView
+
+    val list = mutableListOf<NotificationModel>()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
+        arguments?.let {}
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_student_notification, container, false)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        recyclerView = view.findViewById(R.id.rvNotifications)
+        tvEmpty = view.findViewById(R.id.tvNoNotification)
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
+
+        auth = FirebaseAuth.getInstance()
+        db = FirebaseDatabase.getInstance().reference
+
+        loadNotifications()
+        updateBadgeCount()
     }
 
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment StudentNotificationFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            StudentNotificationFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+    fun loadNotifications(){
+        val userId = auth.currentUser?.uid?:return
+
+        db.child("Notifications").child(userId).addValueEventListener(object: ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                list.clear()
+                if(snapshot.exists()){
+                    for(data in snapshot.children){
+                        val notification = data.getValue(NotificationModel::class.java)
+                        if(notification != null){
+                            list.add(notification)
+                        }
+
+                    }
+
+                    if(list.isEmpty()){
+                        tvEmpty.visibility = View.VISIBLE
+                        recyclerView.visibility = View.GONE
+                    }else{
+                        tvEmpty.visibility = View.GONE
+                        recyclerView.visibility = View.VISIBLE
+                        recyclerView.adapter = StudentNotificationAdapter(list){jobId, tutorId->
+                            showMeetingDialog(jobId, tutorId)
+                        }
+                    }
+                    recyclerView.adapter = StudentNotificationAdapter(list){jobId, tutorId->
+                        showMeetingDialog(jobId, tutorId)
+                    }
                 }
+
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(requireContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    fun updateBadgeCount(){
+        val studentId = auth.currentUser?.uid?:return
+
+        db.child("Notifications").child(studentId).addValueEventListener(object : ValueEventListener{
+            override fun onDataChange(snapshot: DataSnapshot) {
+                var count = 0
+                for(data in snapshot.children){
+                    val notification = data.getValue(NotificationModel::class.java)
+                    if(notification != null && !notification.isRead){
+                        count++
+                    }
+                }
+                (activity as StudentDashboard).updateBadge(count)
+
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(requireContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    fun showMeetingDialog(jobId:Int, tutorId:String){
+        val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_set_meeting, null)
+
+        val etLocation = view.findViewById<EditText>(R.id.etLocation)
+        val btnPickDate = view.findViewById<Button>(R.id.btnPickDate)
+        val btnPickTime = view.findViewById<Button>(R.id.btnPickTime)
+
+        val calendar = Calendar.getInstance()
+        var selectedDate = ""
+        var selectedTime = ""
+
+        btnPickDate.setOnClickListener {
+
+            DatePickerDialog(requireContext(), { _, year, month, day ->
+                selectedDate = "$day/${month+1}/$year"
+                btnPickDate.text = selectedDate
+            }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
+        }
+
+        btnPickTime.setOnClickListener {
+
+            TimePickerDialog(requireContext(), { _, hour, minute ->
+                selectedTime = String.format("%02d:%02d", hour, minute)
+                btnPickTime.text = selectedTime
+            }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), false).show()
+        }
+
+        AlertDialog.Builder(requireContext()).setTitle("Set Meeting").setView(view)
+            .setPositiveButton("Confirm"){_,_->
+                val location = etLocation.text.toString().trim()
+                if(location.isEmpty() || selectedDate.isEmpty() || selectedTime.isEmpty()){
+                    Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+
+                saveMeeting(jobId, tutorId, selectedDate, selectedTime, location)
+            }
+            .setNegativeButton("Cancel", null).show()
+
+    }
+
+    fun saveMeeting(jobId: Int, tutorId: String, date:String, time:String, location:String){
+        db= FirebaseDatabase.getInstance().getReference("Meetings")
+        val meetingId = db.push().key?:return
+
+        val studentId = auth.currentUser?.uid?:return
+
+        val meeting = Meeting(meetingId, jobId, studentId, tutorId, date, time, location,"pending", System.currentTimeMillis())
+
+        db.child(meetingId).setValue(meeting)
+            .addOnSuccessListener {
+                Toast.makeText(requireContext(), "Meeting set", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener {
+                Toast.makeText(requireContext(), "Failed to set meeting", Toast.LENGTH_SHORT).show()
             }
     }
+
 }

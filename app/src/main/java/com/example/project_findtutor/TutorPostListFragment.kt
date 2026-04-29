@@ -67,12 +67,32 @@ class TutorPostListFragment : Fragment(R.layout.fragment_tutor_post_list) {
 
     fun markInterested(post:Post){
         val tutorId = auth.currentUser?.uid ?: return
-        db.child("interests").child(post.jobId.toString()).child(tutorId)
-            .setValue(true).addOnSuccessListener {
-                Toast.makeText(requireContext(), "Interested marked", Toast.LENGTH_SHORT).show()
-            }.addOnFailureListener {
-                Toast.makeText(requireContext(), "Failed to mark interested", Toast.LENGTH_SHORT).show()
+        val studentId = post.userId
+
+        db.child("Tutors").child(tutorId).get()
+            .addOnSuccessListener { snapshot ->
+                val tutorName = snapshot.child("name").value.toString()
+
+                db.child("interests").child(post.jobId.toString()).child(tutorId).get().addOnSuccessListener {
+                    if(it.exists()){
+                        Toast.makeText(requireContext(), "Already marked interested", Toast.LENGTH_SHORT).show()
+                        return@addOnSuccessListener
+                    }else{
+                        val notification = mapOf("jobId" to post.jobId, "tutorId" to tutorId, "tutorName" to tutorName, "timestamp" to System.currentTimeMillis(), "isRead" to false)
+
+                        db.child("Notifications").child(studentId).push().setValue(notification)
+                        Toast.makeText(requireContext(), "Interested sent", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+
             }
+//        db.child("interests").child(post.jobId.toString()).child(tutorId)
+//            .setValue(true).addOnSuccessListener {
+//                Toast.makeText(requireContext(), "Interested marked", Toast.LENGTH_SHORT).show()
+//            }.addOnFailureListener {
+//                Toast.makeText(requireContext(), "Failed to mark interested", Toast.LENGTH_SHORT).show()
+//            }
     }
 
 }
