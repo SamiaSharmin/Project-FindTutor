@@ -29,15 +29,27 @@ class StudentNotificationAdapter(val list: List<NotificationModel>, val onSetMee
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = list[position]
         holder.tvTime.text = formatTime(item.timestamp)
-        holder.tvMessage.text = "${item.tutorName} is interested in your job (ID: ${item.jobId})"
-
-        holder.btnViewTutorDetails.setOnClickListener {
-            Toast.makeText(holder.itemView.context, "View Profile", Toast.LENGTH_SHORT).show()
+        holder.tvMessage.text = when(item.type){
+            "meeting_status" -> item.message
+            "interest" -> "${item.tutorName} is interested in your job (ID: ${item.jobId})"
+            else -> item.message
         }
 
-        holder.btnSetMeeting.setOnClickListener {
+        if(item.type == "meeting_status"){
+            holder.btnSetMeeting.visibility= View.GONE
+            holder.btnViewTutorDetails.visibility= View.GONE
+        }else {
+            holder.btnSetMeeting.visibility = View.VISIBLE
+            holder.btnViewTutorDetails.visibility = View.VISIBLE
+
+            holder.btnViewTutorDetails.setOnClickListener {
+                Toast.makeText(holder.itemView.context, "View Profile", Toast.LENGTH_SHORT).show()
+            }
+
+            holder.btnSetMeeting.setOnClickListener {
 //            Toast.makeText(holder.itemView.context, "Set Meeting", Toast.LENGTH_SHORT).show()
-            onSetMeetingClick(item.jobId, item.tutorId)
+                onSetMeetingClick(item.jobId, item.tutorId)
+            }
         }
     }
 

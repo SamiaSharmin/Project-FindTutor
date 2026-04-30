@@ -4,6 +4,8 @@ data class Meeting(
     var meetingId: String = "",
     var jobId: Int = 0,
     var studentId: String = "",
+    var studentName: String = "",
+    var studentPhoneNumber: String = "",
     var tutorId: String="",
     var date: String = "",
     var time: String = "",

@@ -156,15 +156,34 @@ class StudentNotificationFragment : Fragment(R.layout.fragment_student_notificat
 
         val studentId = auth.currentUser?.uid?:return
 
-        val meeting = Meeting(meetingId, jobId, studentId, tutorId, date, time, location,"pending", System.currentTimeMillis())
+        val meetingRef = FirebaseDatabase.getInstance().getReference("Meetings")
 
-        db.child(meetingId).setValue(meeting)
-            .addOnSuccessListener {
-                Toast.makeText(requireContext(), "Meeting set", Toast.LENGTH_SHORT).show()
+        FirebaseDatabase.getInstance().getReference("Students").child(studentId).child("name")
+            .get().addOnSuccessListener { snapshot ->
+                val studentName = snapshot.value.toString()?:"Unknown"
+                val studentPhoneNumber = auth.currentUser?.phoneNumber?:""
+
+                val meeting = Meeting(meetingId, jobId, studentId, studentName,studentPhoneNumber, tutorId, date, time, location,"pending", System.currentTimeMillis())
+
+                meetingRef.child(meetingId).setValue(meeting)
+                    .addOnSuccessListener {
+                        Toast.makeText(requireContext(), "Meeting set", Toast.LENGTH_SHORT).show()
+                    }
+                    .addOnFailureListener {
+                        Toast.makeText(requireContext(), "Failed to set meeting", Toast.LENGTH_SHORT).show()
+                    }
             }
-            .addOnFailureListener {
-                Toast.makeText(requireContext(), "Failed to set meeting", Toast.LENGTH_SHORT).show()
-            }
+
+//        val meeting = Meeting(meetingId, jobId, studentId, tutorId, date, time, location,"pending", System.currentTimeMillis())
+//
+//        db.child(meetingId).setValue(meeting)
+//            .addOnSuccessListener {
+//                Toast.makeText(requireContext(), "Meeting set", Toast.LENGTH_SHORT).show()
+//            }
+//            .addOnFailureListener {
+//                Toast.makeText(requireContext(), "Failed to set meeting", Toast.LENGTH_SHORT).show()
+//            }
     }
+
 
 }
