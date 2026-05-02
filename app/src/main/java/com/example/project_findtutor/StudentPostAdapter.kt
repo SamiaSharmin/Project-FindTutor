@@ -1,12 +1,14 @@
 package com.example.project_findtutor
 
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.recyclerview.widget.RecyclerView
 
-class StudentPostAdapter(val postList: List<Post>) : RecyclerView.Adapter<StudentPostAdapter.PostViewHolder>() {
+class StudentPostAdapter(val postList: MutableList<Post>, val onDeleteClick: (Post, Int) -> Unit)
+    : RecyclerView.Adapter<StudentPostAdapter.PostViewHolder>() {
 
     class PostViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvJobId: TextView = itemView.findViewById(R.id.tvJobId)
@@ -18,8 +20,6 @@ class StudentPostAdapter(val postList: List<Post>) : RecyclerView.Adapter<Studen
         val tvPreferredTutor: TextView = itemView.findViewById(R.id.tvPreferredTutor)
         val btnEdit: Button = itemView.findViewById(R.id.btnEdit)
         val btnDelete: Button = itemView.findViewById(R.id.btnDelete)
-
-
 
     }
 
@@ -42,11 +42,15 @@ class StudentPostAdapter(val postList: List<Post>) : RecyclerView.Adapter<Studen
         holder.tvPreferredTutor.text = "${post.tutorGender} tutor preferred"
 
         holder.btnEdit.setOnClickListener {
-            Toast.makeText(holder.itemView.context, "Edit button clicked", Toast.LENGTH_SHORT).show()
+            val intent = Intent(holder.itemView.context, EditPostActivity::class.java)
+            intent.putExtra("postId", post.postId)
+            holder.itemView.context.startActivity(intent)
+//            Toast.makeText(holder.itemView.context, "Edit button clicked", Toast.LENGTH_SHORT).show()
         }
 
         holder.btnDelete.setOnClickListener {
-            Toast.makeText(holder.itemView.context, "Delete button clicked", Toast.LENGTH_SHORT).show()
+            onDeleteClick(post, position)
+//            Toast.makeText(holder.itemView.context, "Delete button clicked", Toast.LENGTH_SHORT).show()
         }
     }
 }

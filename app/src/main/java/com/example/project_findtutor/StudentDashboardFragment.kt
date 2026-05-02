@@ -41,7 +41,8 @@ class StudentDashboardFragment : Fragment(R.layout.fragment_student_dashboard) {
         tvRating = view.findViewById(R.id.tvRating)
         rvPost = view.findViewById(R.id.rvPosts)
         rvPost.layoutManager= LinearLayoutManager(requireContext())
-        rvPost.adapter = StudentPostAdapter(postList)
+        rvPost.adapter = StudentPostAdapter(
+            postList, onDeleteClick = { post,position-> showDeleteDialog(post,position)})
 
 
         loadStudentInfo()
@@ -82,6 +83,7 @@ class StudentDashboardFragment : Fragment(R.layout.fragment_student_dashboard) {
                     for (data in snapshot.children) {
                         val post = data.getValue(Post::class.java)
                         if (post != null) {
+                            post.postId = data.key ?: ""
                             postList.add(post)
                         }
                     }
@@ -92,6 +94,29 @@ class StudentDashboardFragment : Fragment(R.layout.fragment_student_dashboard) {
                     Toast.makeText(requireContext(), "Failed to load posts", Toast.LENGTH_SHORT).show()
                 }
             })
+    }
+
+    fun showDeleteDialog(post: Post, position: Int){
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle("Delete Post")
+            .setMessage("Are you sure you want to delete this post?")
+            .setPositiveButton("Yes") { _, _ ->
+                deletePost(post, position)
+            }
+            .setNegativeButton("No", null)
+            .show()
+
+    }
+
+    fun deletePost(post: Post, position: Int) {
+        db.child("Posts").child(post.postId).removeValue()
+            .addOnSuccessListener {
+                rvPost.adapter?.notifyItemRemoved(position)
+                Toast.makeText(requireContext(), "Post deleted successfully", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener {
+                Toast.makeText(requireContext(), "Failed to delete post", Toast.LENGTH_SHORT).show()
+            }
     }
 
 }

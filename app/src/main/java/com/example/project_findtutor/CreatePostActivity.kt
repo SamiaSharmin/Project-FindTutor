@@ -141,6 +141,7 @@ class CreatePostActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+
             generateJobIdAndSave(
                 userId,
                 title,
@@ -189,7 +190,8 @@ class CreatePostActivity : AppCompatActivity() {
     }
 
     fun savePost(jobId: Int, userId: String, title: String, location: String, studentClass: String, time: String, subjects: String, salary: Int, days: Int, studentGender: String, tutorGender: String, description: String="",postedDate: String){
-        val post = Post(jobId, userId, title, location, studentClass, time, subjects, salary, days, studentGender, tutorGender, description,postedDate)
+        val postId = jobId.toString()
+        val post = Post(postId,jobId, userId, title, location, studentClass, time, subjects, salary, days, studentGender, tutorGender, description,postedDate)
         db.child("Posts").child(jobId.toString()).setValue(post)
             .addOnSuccessListener {
                 Toast.makeText(this, "Post created successfully! Job ID: $jobId", Toast.LENGTH_SHORT).show()

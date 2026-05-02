@@ -1,6 +1,7 @@
 package com.example.project_findtutor
 
 data class Post(
+    var postId: String="",
     val jobId: Int = 0,
     val userId: String = "",
     val title: String = "",
