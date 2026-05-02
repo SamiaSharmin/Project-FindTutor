@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8F9FA"
+    tools:context=".TutorEditProfileActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Edit Profile"
+            android:textColor="#555555"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="30dp"/>
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardElevation="6dp"
+            app:cardCornerRadius="20dp"
+            app:cardBackgroundColor="#FFFFFF">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:text="Name"
+                    android:textColor="#777777"
+                    android:textSize="14sp"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"/>
+
+                <EditText
+                    android:id="@+id/etTutorName"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="@drawable/edittext_bg"
+                    android:hint="Enter your name"
+                    android:padding="12dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="16dp"/>
+
+<!--                <TextView-->
+<!--                    android:text="Email"-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:textColor="#777777"-->
+<!--                    android:textSize="14sp"/>-->
+
+<!--                <EditText-->
+<!--                    android:id="@+id/etEmail"-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="50dp"-->
+<!--                    android:background="@drawable/edittext_bg"-->
+<!--                    android:hint="Enter your email"-->
+<!--                    android:padding="12dp"-->
+<!--                    android:layout_marginTop="6dp"-->
+<!--                    android:layout_marginBottom="16dp"/>-->
+
+                <TextView
+                    android:text="Phone Number"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#777777"
+                    android:textSize="14sp"/>
+
+                <EditText
+                    android:id="@+id/etPhoneNumber"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="@drawable/edittext_bg"
+                    android:hint="Enter your phone number"
+                    android:padding="12dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="16dp"/>
+
+                <TextView
+                    android:text="Qualification"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#777777"
+                    android:textSize="14sp"/>
+
+                <EditText
+                    android:id="@+id/etQualification"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="150dp"
+                    android:background="@drawable/edittext_bg"
+                    android:hint="Enter your qualification"
+                    android:padding="12dp"
+                    android:inputType="textMultiLine"
+                    android:gravity="top|start"
+                    android:maxLines="6"
+                    android:lines="6"
+                    android:scrollbars="vertical"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="16dp"/>
+
+                <TextView
+                    android:text="Preferred Areas"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#777777"
+                    android:textSize="14sp"/>
+
+                <EditText
+                    android:id="@+id/etPreferredAreas"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="@drawable/edittext_bg"
+                    android:hint="e.g., Dhaka, Gulshan, Banani"
+                    android:padding="12dp"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginBottom="16dp"/>
+
+                <Button
+                    android:id="@+id/btnSave"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Save Changes"
+                    android:backgroundTint="@null"
+                    android:background="@drawable/btn_gradient"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:layout_marginBottom="12dp"/>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+
+
+    </LinearLayout>
+
+</ScrollView>

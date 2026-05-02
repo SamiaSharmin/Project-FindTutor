@@ -48,7 +48,8 @@ class TutorProfileFragment : Fragment(R.layout.fragment_tutor_profile) {
         loadProfile()
 
         btnEditProfile.setOnClickListener {
-            Toast.makeText(requireContext(),"Edit Profile", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(requireContext(), TutorEditProfileActivity::class.java))
+//            Toast.makeText(requireContext(),"Edit Profile", Toast.LENGTH_SHORT).show()
         }
 
         btnChangePassword.setOnClickListener {
@@ -71,6 +72,11 @@ class TutorProfileFragment : Fragment(R.layout.fragment_tutor_profile) {
             startActivity(Intent(requireContext(), MainActivity::class.java))
             requireActivity().finish()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadProfile()
     }
 
     fun loadProfile(){

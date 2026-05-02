@@ -15,6 +15,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ProjectFindTutor">
         <activity
+            android:name=".StudentEditProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TutorEditProfileActivity"
+            android:exported="false" />
+        <activity
             android:name=".CreatePostActivity"
             android:exported="false" />
         <activity

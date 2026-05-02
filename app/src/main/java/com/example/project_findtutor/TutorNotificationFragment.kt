@@ -126,27 +126,29 @@ class TutorNotificationFragment : Fragment(R.layout.fragment_tutor_notification)
                 Toast.makeText(requireContext(), "Failed to update meeting status", Toast.LENGTH_SHORT).show()
             }
 
-        val notificationRef = db.child("Notifications").child(meeting.studentId)
-        val notificationId = notificationRef.push().key?:return
+        db.child("Tutors").child(meeting.tutorId).child("name").get().addOnSuccessListener { snapshot ->
+            val tutorName = snapshot.value.toString() ?: "Unknown"
+            val notificationRef = db.child("Notifications").child(meeting.studentId)
+            val notificationId = notificationRef.push().key ?: return@addOnSuccessListener
 
-        val message = if(status == "accepted"){
-            "Meeting request is Accepted by tutor"
-        }else{
-            "Meeting request is Rejected by tutor"
+            val message = if (status == "accepted") {
+                "Meeting request is Accepted by $tutorName"
+            } else {
+                "Meeting request is Rejected by $tutorName"
+            }
+
+            val notification = NotificationModel(
+                meeting.jobId,
+                meeting.tutorId,
+                tutorName,
+                message,
+                "meeting_status",
+                System.currentTimeMillis(),
+                false
+            )
+
+            notificationRef.child(notificationId).setValue(notification)
         }
-
-        val notification = NotificationModel(
-            meeting.jobId,
-            meeting.tutorId,
-            meeting.studentName,
-            message,
-            "meeting_status",
-            System.currentTimeMillis(),
-            false
-        )
-
-        notificationRef.child(notificationId).setValue(notification)
-
     }
 
 }
