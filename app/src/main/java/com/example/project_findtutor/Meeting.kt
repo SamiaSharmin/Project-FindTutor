@@ -11,5 +11,9 @@ data class Meeting(
     var time: String = "",
     var location: String = "",
     var status: String = "pending",
-    var createdAt:Long = 0
+    var createdAt:Long = 0,
+    var reviewSubmitted: Boolean = false,
+    var reviewRating: Float = 0f,
+    var reviewText: String = ""
+
 )

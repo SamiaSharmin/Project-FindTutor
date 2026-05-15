@@ -99,7 +99,7 @@ class TutorRegisterActivity : AppCompatActivity() {
 
             auth.createUserWithEmailAndPassword(emailStr, passwordStr).addOnSuccessListener {
                 val userId = it.user!!.uid
-                val tutor = Tutor(userId, nameStr, emailStr, phoneNumberStr, qualificationStr, preferredAreasStr, 0.0)
+                val tutor = Tutor(userId, nameStr, emailStr, phoneNumberStr, qualificationStr, preferredAreasStr, 0f)
                 val user = User(userId, nameStr, emailStr, "tutor")
                 db.child("Users").child(userId).setValue(user)
                 db.child("Tutors").child(userId).setValue(tutor)
