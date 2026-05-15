@@ -10,7 +10,7 @@ import android.widget.*
 import androidx.recyclerview.widget.RecyclerView
 import java.util.Locale
 
-class AdminUsersAdapter(private val onMoreClick: (AdminUser, View) -> Unit)
+class AdminUsersAdapter(private val onUserClick: (AdminUser) -> Unit,private val onMoreClick: (AdminUser, View) -> Unit)
     :RecyclerView.Adapter<AdminUsersAdapter.AdminUserViewHolder>() {
     private val users = mutableListOf<AdminUser>()
 
@@ -28,7 +28,7 @@ class AdminUsersAdapter(private val onMoreClick: (AdminUser, View) -> Unit)
     }
 
     override fun onBindViewHolder(holder: AdminUserViewHolder, position: Int) {
-        holder.bind(users[position], onMoreClick)
+        holder.bind(users[position],onUserClick, onMoreClick)
     }
 
     override fun getItemCount(): Int = users.size
@@ -45,7 +45,7 @@ class AdminUsersAdapter(private val onMoreClick: (AdminUser, View) -> Unit)
         private val tvUserEmail: TextView = itemView.findViewById(R.id.tvUserEmail)
         private val tvUserMeta: TextView = itemView.findViewById(R.id.tvUserMeta)
 
-        fun bind(user: AdminUser, onMoreClick: (AdminUser, View) -> Unit) {
+        fun bind(user: AdminUser,onUserClick: (AdminUser) -> Unit, onMoreClick: (AdminUser, View) -> Unit) {
             cbSelectUser.isChecked = false
 
             imgUserAvatar.setImageResource(R.drawable.ic_admin_profile)
@@ -69,6 +69,10 @@ class AdminUsersAdapter(private val onMoreClick: (AdminUser, View) -> Unit)
 
             btnMoreUserOptions.setOnClickListener {
                 onMoreClick(user, it)
+            }
+
+            itemView.setOnClickListener {
+                onUserClick(user)
             }
         }
 

@@ -39,13 +39,11 @@ class AdminManageUsersFragment : Fragment(R.layout.fragment_admin_manage_users) 
     private lateinit var chipTutors: MaterialCardView
     private lateinit var chipSuspended: MaterialCardView
     private lateinit var chipUnverified: MaterialCardView
-
     private lateinit var tvChipAllUsers: TextView
     private lateinit var tvChipStudents: TextView
     private lateinit var tvChipTutors: TextView
     private lateinit var tvChipSuspended: TextView
     private lateinit var tvChipUnverified: TextView
-
     private lateinit var adapter: AdminUsersAdapter
 
     private val allUsers = mutableListOf<AdminUser>()
@@ -82,6 +80,7 @@ class AdminManageUsersFragment : Fragment(R.layout.fragment_admin_manage_users) 
         tvChipSuspended = view.findViewById(R.id.tvChipSuspended)
         tvChipUnverified = view.findViewById(R.id.tvChipUnverified)
 
+
         requireActivity().findViewById<TextView>(R.id.tvAdminDashboardTitle).text = "View User"
 
         setupRecyclerView()
@@ -91,12 +90,36 @@ class AdminManageUsersFragment : Fragment(R.layout.fragment_admin_manage_users) 
     }
 
     private fun setupRecyclerView() {
-        adapter = AdminUsersAdapter { user, anchor ->
-            showUserActionMenu(user, anchor)
-        }
+        adapter = AdminUsersAdapter(
+            onUserClick = { user ->
+                openUserDetail(user)
+            },
+            onMoreClick = { user, anchor ->
+                showUserActionMenu(user, anchor)
+            }
+        )
 
         rvAdminUsers.layoutManager = LinearLayoutManager(requireContext())
         rvAdminUsers.adapter = adapter
+    }
+
+    private fun openUserDetail(user: AdminUser) {
+        requireActivity()
+            .findViewById<TextView>(R.id.tvAdminDashboardTitle)
+            .text = "User Detail"
+
+        parentFragmentManager
+            .beginTransaction()
+            .replace(
+                R.id.adminFragmentContainer,
+                AdminUserDetailFragment.newInstance(
+                    user.userId,
+                    user.profileId,
+                    user.role
+                )
+            )
+            .addToBackStack(null)
+            .commit()
     }
 
     private fun setupSearch() {
@@ -162,11 +185,7 @@ class AdminManageUsersFragment : Fragment(R.layout.fragment_admin_manage_users) 
                 progressUsers.visibility = View.GONE
                 tvEmptyUsers.text = "Failed to load users"
 
-                Toast.makeText(
-                    requireContext(),
-                    "Database error: ${error.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(requireContext(), "Database error: ${error.message}", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -247,39 +266,19 @@ class AdminManageUsersFragment : Fragment(R.layout.fragment_admin_manage_users) 
 
         for (tutorSnap in tutorsRoot.children) {
             val profileId = tutorSnap.key.orEmpty()
-            val userId = firstNonBlank(
-                tutorSnap.getStringValue("userId"),
-                profileId
-            )
+            val userId = firstNonBlank(tutorSnap.getStringValue("userId"), profileId)
 
             if (addedUserIds.contains(userId) || addedProfiles.contains("tutor:$profileId")) {
                 continue
             }
 
-            result.add(
-                createAdminUser(
-                    userSnap = null,
-                    profileSnap = tutorSnap,
-                    userId = userId,
-                    profileId = profileId,
-                    role = "tutor"
-                )
-            )
+            result.add(createAdminUser(userSnap = null, profileSnap = tutorSnap, userId = userId, profileId = profileId, role = "tutor"))
         }
 
-        return result.sortedWith(
-            compareBy<AdminUser> { it.role }
-                .thenBy { it.name.lowercase(Locale.ROOT) }
-        )
+        return result.sortedWith(compareBy<AdminUser> { it.role }.thenBy { it.name.lowercase(Locale.ROOT) })
     }
 
-    private fun createAdminUser(
-        userSnap: DataSnapshot?,
-        profileSnap: DataSnapshot?,
-        userId: String,
-        profileId: String,
-        role: String
-    ): AdminUser {
+    private fun createAdminUser(userSnap: DataSnapshot?, profileSnap: DataSnapshot?, userId: String, profileId: String, role: String): AdminUser {
         val normalizedRole = role.lowercase(Locale.ROOT)
 
         val name = firstNonBlank(
@@ -359,8 +358,7 @@ class AdminManageUsersFragment : Fragment(R.layout.fragment_admin_manage_users) 
         adapter.submitList(filteredUsers)
 
         progressUsers.visibility = View.GONE
-        tvUserResultCount.text =
-            "Showing ${formatNumber(filteredUsers.size)} of ${formatNumber(allUsers.size)} results"
+        tvUserResultCount.text = "Showing ${formatNumber(filteredUsers.size)} of ${formatNumber(allUsers.size)} results"
 
         if (filteredUsers.isEmpty()) {
             emptyUsersLayout.visibility = View.VISIBLE
