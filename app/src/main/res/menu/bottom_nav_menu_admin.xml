@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/navAdminDashboard"
+        android:icon="@drawable/ic_admin_dashboard"
+        android:title="Admin" />
+
+    <item
+        android:id="@+id/navAdminUsers"
+        android:icon="@drawable/ic_admin_users"
+        android:title="View Users" />
+
+    <item
+        android:id="@+id/navAdminMeetings"
+        android:icon="@drawable/ic_admin_meetings"
+        android:title="Meetings" />
+
+    <item
+        android:id="@+id/navAdminPosts"
+        android:icon="@drawable/ic_admin_posts"
+        android:title="Posts" />
+
+
+    <item
+        android:id="@+id/navAdminReports"
+        android:icon="@drawable/ic_admin_reports"
+        android:title="Reports" />
+
+<!--    <item-->
+<!--        android:id="@+id/navAdminProfile"-->
+<!--        android:icon="@drawable/ic_admin_profile"-->
+<!--        android:title="Profile" />-->
+
+</menu>

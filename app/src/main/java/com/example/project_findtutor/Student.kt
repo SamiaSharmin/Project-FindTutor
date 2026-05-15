@@ -5,5 +5,5 @@ data class Student(
     val name: String,
     val email: String,
     val phoneNumber: String,
-    val rating: Double = 0.0
+    val rating: Float = 0f
 )
