@@ -81,6 +81,18 @@
             android:background="#830303"/>
 
         <Button
+            android:id="@+id/btnReportProblem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="15dp"
+            android:background="#2D7853"
+            android:text="Report a Problem"
+            android:textAllCaps="true"
+            android:textColor="#F9F9FB"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <Button
             android:id="@+id/btnLogout"
             android:layout_width="match_parent"
             android:layout_height="58dp"
