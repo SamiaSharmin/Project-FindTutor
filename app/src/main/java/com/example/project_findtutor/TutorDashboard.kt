@@ -62,10 +62,18 @@ class TutorDashboard : AppCompatActivity() {
 
     }
 
-
-
     fun loadFragment(fragment: androidx.fragment.app.Fragment) {
         supportFragmentManager.beginTransaction().replace(R.id.fragmentContainer, fragment).commit()
+    }
+
+    fun updateBadge(count: Int) {
+        val badge = bottomNav.getOrCreateBadge(R.id.nav_notification)
+        if (count > 0) {
+            badge.isVisible = true
+            badge.number = count
+        } else {
+            badge.isVisible = false
+        }
     }
 
 

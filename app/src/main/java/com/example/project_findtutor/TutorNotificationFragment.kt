@@ -22,8 +22,12 @@ class TutorNotificationFragment : Fragment(R.layout.fragment_tutor_notification)
     lateinit var tvEmpty: TextView
     lateinit var auth: FirebaseAuth
     lateinit var db: DatabaseReference
+    private lateinit var adapter: TutorNotificationAdapter
     val meetingList = mutableListOf<Meeting>()
-    lateinit var adapter: TutorMeetingAdapter
+    private val notificationList = mutableListOf<NotificationModel>()
+
+    private var meetingsListener: ValueEventListener? = null
+    private var notificationsListener: ValueEventListener? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,52 +40,140 @@ class TutorNotificationFragment : Fragment(R.layout.fragment_tutor_notification)
 
         recyclerView = view.findViewById(R.id.rvNotifications)
         tvEmpty = view.findViewById(R.id.tvNoNotification)
-        recyclerView.layoutManager = LinearLayoutManager(requireContext())
-
         auth = FirebaseAuth.getInstance()
         db = FirebaseDatabase.getInstance().reference
 
-        adapter = TutorMeetingAdapter(meetingList){meeting ->
+//        adapter = TutorMeetingAdapter(meetingList){meeting ->
+//            showMeetingDetailsDialog(meeting)
+//        }
+        adapter = TutorNotificationAdapter { meeting ->
             showMeetingDetailsDialog(meeting)
         }
 
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
         loadMeetings()
+        loadAdminNotifications()
+        updateBadgeCount()
 
     }
 
     fun loadMeetings(){
-        val tutorId = auth.currentUser?.uid?:return
+        val tutorId = auth.currentUser?.uid ?: return
 
-        db.child("Meetings").orderByChild("tutorId").equalTo(tutorId).addValueEventListener(object :
-            ValueEventListener {
+        meetingsListener?.let {
+            db.child("Meetings").removeEventListener(it)
+        }
+
+        meetingsListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                if(!isAdded)return
-                meetingList.clear()
-                if(snapshot.exists()) {
-                    for (data in snapshot.children) {
+                if (!isAdded) return
 
-                        val meeting = data.getValue(Meeting::class.java)
-                        if (meeting != null) {
-                            meeting.meetingId=data.key?:""
-                            meetingList.add(meeting)
-                        }
+                meetingList.clear()
+
+                for (data in snapshot.children) {
+                    val meeting = data.getValue(Meeting::class.java)
+                    if (meeting != null) {
+                        meeting.meetingId = data.key.orEmpty()
+                        meetingList.add(meeting)
                     }
                 }
 
-                if (meetingList.isEmpty()){
-                    tvEmpty.visibility = View.VISIBLE
-                    recyclerView.visibility = View.GONE
-                }else{
-                    tvEmpty.visibility = View.GONE
-                    recyclerView.visibility = View.VISIBLE
-                    adapter.notifyDataSetChanged()
-                }
+                refreshNotificationList()
             }
 
             override fun onCancelled(error: DatabaseError) {
+                if (!isAdded) return
                 Toast.makeText(requireContext(), "Failed to load meetings", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        db.child("Meetings")
+            .orderByChild("tutorId")
+            .equalTo(tutorId)
+            .addValueEventListener(meetingsListener as ValueEventListener)
+    }
+
+    private fun loadAdminNotifications() {
+        val tutorId = auth.currentUser?.uid ?: return
+
+        notificationsListener?.let {
+            db.child("Notifications").child(tutorId).removeEventListener(it)
+        }
+
+        notificationsListener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (!isAdded) return
+
+                notificationList.clear()
+
+                for (data in snapshot.children) {
+                    val notification = data.getValue(NotificationModel::class.java)
+                    if (notification != null) {
+                        notificationList.add(notification)
+                    }
+                }
+
+                refreshNotificationList()
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                if (!isAdded) return
+                Toast.makeText(requireContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        db.child("Notifications")
+            .child(tutorId)
+            .addValueEventListener(notificationsListener as ValueEventListener)
+    }
+
+    private fun refreshNotificationList() {
+        val combinedList = mutableListOf<TutorNotificationListItem>()
+
+        combinedList.addAll(meetingList.map { TutorNotificationListItem.MeetingItem(it) })
+        combinedList.addAll(notificationList.map { TutorNotificationListItem.NotificationItem(it) })
+
+        combinedList.sortByDescending { item ->
+            when (item) {
+                is TutorNotificationListItem.MeetingItem -> item.meeting.createdAt
+                is TutorNotificationListItem.NotificationItem -> item.notification.timestamp
+            }
+        }
+
+        adapter.submitList(combinedList)
+
+        if (combinedList.isEmpty()) {
+            tvEmpty.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
+        } else {
+            tvEmpty.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
+        }
+    }
+
+    private fun updateBadgeCount() {
+        val tutorId = auth.currentUser?.uid ?: return
+
+        db.child("Notifications").child(tutorId).addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (!isAdded) return
+
+                var unreadCount = 0
+                for (data in snapshot.children) {
+                    val notification = data.getValue(NotificationModel::class.java)
+                    if (notification != null && !notification.isRead) {
+                        unreadCount++
+                    }
+                }
+
+                (activity as? TutorDashboard)?.updateBadge(unreadCount)
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                if (!isAdded) return
+                Toast.makeText(requireContext(), "Failed to load notification count", Toast.LENGTH_SHORT).show()
             }
         })
     }
@@ -149,6 +241,24 @@ class TutorNotificationFragment : Fragment(R.layout.fragment_tutor_notification)
 
             notificationRef.child(notificationId).setValue(notification)
         }
+    }
+
+    override fun onDestroyView() {
+        meetingsListener?.let {
+            db.child("Meetings").removeEventListener(it)
+        }
+
+        val tutorId = auth.currentUser?.uid
+        if (tutorId != null) {
+            notificationsListener?.let {
+                db.child("Notifications").child(tutorId).removeEventListener(it)
+            }
+        }
+
+        meetingsListener = null
+        notificationsListener = null
+
+        super.onDestroyView()
     }
 
 }

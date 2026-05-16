@@ -11,16 +11,18 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class StudentNotificationAdapter(val list: List<NotificationModel>, val onSetMeetingClick: (Int, String) -> Unit, val onReviewClick: (NotificationModel)->Unit)
-    : RecyclerView.Adapter<StudentNotificationAdapter.ViewHolder>() {
+class StudentNotificationAdapter(
+    private val list: List<NotificationModel>,
+    private val onSetMeetingClick: (Int, String) -> Unit,
+    private val onReviewClick: (NotificationModel) -> Unit
+) : RecyclerView.Adapter<StudentNotificationAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-
-        val tvMessage = view.findViewById<TextView>(R.id.tvMessage)
-        val tvTime = view.findViewById<TextView>(R.id.tvTime)
-        val btnViewTutorDetails = view.findViewById<Button>(R.id.btnViewTutorDetails)
-        val btnSetMeeting = view.findViewById<Button>(R.id.btnSetMeeting)
-        val btnReview = view.findViewById<Button>(R.id.btnReview)
+        val tvMessage: TextView = view.findViewById(R.id.tvMessage)
+        val tvTime: TextView = view.findViewById(R.id.tvTime)
+        val btnViewTutorDetails: Button = view.findViewById(R.id.btnViewTutorDetails)
+        val btnSetMeeting: Button = view.findViewById(R.id.btnSetMeeting)
+        val btnReview: Button = view.findViewById(R.id.btnReview)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -33,163 +35,124 @@ class StudentNotificationAdapter(val list: List<NotificationModel>, val onSetMee
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = list[position]
-        holder.tvTime.text = formatTime(item.timestamp)
 
+        holder.tvTime.text = formatTime(item.timestamp)
         holder.tvMessage.text = when (item.type) {
             "meeting_status" -> item.message
             "interest" -> "${item.tutorName} is interested in your job (ID: ${item.jobId})"
-            "meeting_completed" -> "Meeting with ${item.tutorName}.Please rate your tutor."
-            else -> item.message
+            "meeting_completed" -> "Meeting with ${item.tutorName}. Please rate your tutor."
+            "report_investigation_started" -> item.message.ifBlank { "Your report is now under investigation by the admin team." }
+            "review_investigation_started" -> item.message.ifBlank { "Your review is now under investigation by the admin team." }
+            else -> item.message.ifBlank { "You have a new notification." }
         }
 
         holder.btnViewTutorDetails.visibility = View.GONE
         holder.btnSetMeeting.visibility = View.GONE
         holder.btnReview.visibility = View.GONE
 
-        val auth = FirebaseAuth.getInstance()
-        val studentId = auth.currentUser?.uid ?: return
+        holder.btnViewTutorDetails.setOnClickListener(null)
+        holder.btnSetMeeting.setOnClickListener(null)
+        holder.btnReview.setOnClickListener(null)
+
+        when (item.type) {
+            "interest" -> bindInterestNotification(holder, item)
+            "meeting_completed" -> bindMeetingCompletedNotification(holder, item)
+        }
+    }
+
+    private fun bindInterestNotification(holder: ViewHolder, item: NotificationModel) {
+        val studentId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
         holder.btnViewTutorDetails.visibility = View.VISIBLE
-
         holder.btnViewTutorDetails.setOnClickListener {
-            Toast.makeText(
-                holder.itemView.context,
-                "View Profile",
-                Toast.LENGTH_SHORT
-            ).show()
+            Toast.makeText(holder.itemView.context, "View Profile", Toast.LENGTH_SHORT).show()
         }
 
-        if (item.type == "meeting_completed") {
-            holder.btnReview.visibility = View.VISIBLE
+        FirebaseDatabase.getInstance()
+            .getReference("Meetings")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                if (holder.bindingAdapterPosition == RecyclerView.NO_POSITION) return@addOnSuccessListener
 
-            holder.btnReview.setOnClickListener {
-                onReviewClick(item)
-            }
+                var meetingFound: Meeting? = null
 
-            return
-        }
-
-        if (item.type == "interest") {
-
-            FirebaseDatabase.getInstance()
-                .getReference("Meetings")
-                .get()
-                .addOnSuccessListener { snapshot ->
-
-                    var meetingFound: Meeting? = null
-
-                    for (data in snapshot.children) {
-
-                        val meeting = data.getValue(Meeting::class.java)
-
-                        if (
-                            meeting != null &&
-                            meeting.studentId == studentId &&
-                            meeting.tutorId == item.tutorId &&
-                            meeting.jobId == item.jobId
-                        ) {
-                            meetingFound = meeting
-                            break
-                        }
-                    }
-
-                    if (meetingFound == null) {
-
-                        holder.btnSetMeeting.visibility = View.VISIBLE
-
-                    } else {
-
-                        when (meetingFound.status.lowercase()) {
-
-                            "pending" -> {
-                                holder.btnSetMeeting.visibility = View.GONE
-                            }
-
-                            "accepted" -> {
-                                holder.btnReview.visibility = View.VISIBLE
-
-                                holder.btnReview.setOnClickListener {
-                                    onReviewClick(item)
-                                }
-
-                            }
-
-                            "rejected" -> {
-                                holder.btnSetMeeting.visibility = View.VISIBLE
-                            }
-                        }
+                for (data in snapshot.children) {
+                    val meeting = data.getValue(Meeting::class.java)
+                    if (
+                        meeting != null &&
+                        meeting.studentId == studentId &&
+                        meeting.tutorId == item.tutorId &&
+                        meeting.jobId == item.jobId
+                    ) {
+                        meetingFound = meeting
+                        break
                     }
                 }
 
-            holder.btnSetMeeting.setOnClickListener {
-                onSetMeetingClick(item.jobId, item.tutorId)
-            }
-        }
+                when (meetingFound?.status?.lowercase(Locale.ROOT)) {
+                    null, "rejected" -> {
+                        holder.btnSetMeeting.visibility = View.VISIBLE
+                        holder.btnSetMeeting.setOnClickListener {
+                            onSetMeetingClick(item.jobId, item.tutorId)
+                        }
+                    }
 
-//        if (item.type == "interest") {
-//
-//            holder.btnViewTutorDetails.visibility = View.VISIBLE
-//
-//            val auth = FirebaseAuth.getInstance()
-//            val studentId = auth.currentUser?.uid ?: return
-//
-//            FirebaseDatabase.getInstance().getReference("Meetings").orderByChild("jobId").equalTo(item.jobId.toDouble()).get()
-//                .addOnSuccessListener { snapshot ->
-//                    var meetingExists = false
-//                    var acceptedMeeting = false
-//
-//                    for (data in snapshot.children) {
-//
-//                        val meeting = data.getValue(Meeting::class.java)
-//
-//                        if (meeting != null &&
-//                            meeting.studentId == studentId &&
-//                            meeting.tutorId == item.tutorId
-//                        ) {
-//
-//                            meetingExists = true
-//
-//                            if (meeting.status == "accepted") {
-//                                acceptedMeeting = true
-//                            }
-//
-//                            break
-//                        }
-//                    }
-//
-//                    when {
-//                        acceptedMeeting -> {
-//                            holder.btnSetMeeting.visibility = View.GONE
-//                            holder.btnReview.visibility = View.VISIBLE
-//                        }
-//
-//                        meetingExists -> {
-//                            holder.btnSetMeeting.visibility = View.GONE
-//                        }
-//
-//                        else -> {
-//                            holder.btnSetMeeting.visibility = View.VISIBLE
-//                        }
-//                    }
-//                }
-//
-//            holder.btnViewTutorDetails.setOnClickListener {
-//                Toast.makeText(
-//                    holder.itemView.context,
-//                    "View Profile",
-//                    Toast.LENGTH_SHORT
-//                ).show()
-//            }
-//
-//            holder.btnSetMeeting.setOnClickListener {
-//                onSetMeetingClick(item.jobId, item.tutorId)
-//            }
+                    "accepted" -> {
+                        holder.btnReview.visibility = View.VISIBLE
+                        holder.btnReview.setOnClickListener {
+                            onReviewClick(item)
+                        }
+                    }
+
+                    else -> {
+                        holder.btnSetMeeting.visibility = View.GONE
+                        holder.btnReview.visibility = View.GONE
+                    }
+                }
+            }
     }
 
+    private fun bindMeetingCompletedNotification(holder: ViewHolder, item: NotificationModel) {
+        holder.btnReview.visibility = View.VISIBLE
+        holder.btnReview.setOnClickListener {
+            onReviewClick(item)
+        }
+    }
+
+    private fun formatTime(timestamp: Long): String {
+        if (timestamp <= 0L) return ""
+
+        val date = Date(timestamp)
+        val format = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
+        return format.format(date)
+    }
+}
+
+//class StudentNotificationAdapter(val list: List<NotificationModel>, val onSetMeetingClick: (Int, String) -> Unit, val onReviewClick: (NotificationModel)->Unit)
+//    : RecyclerView.Adapter<StudentNotificationAdapter.ViewHolder>() {
+//
+//    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+//
+//        val tvMessage = view.findViewById<TextView>(R.id.tvMessage)
+//        val tvTime = view.findViewById<TextView>(R.id.tvTime)
+//        val btnViewTutorDetails = view.findViewById<Button>(R.id.btnViewTutorDetails)
+//        val btnSetMeeting = view.findViewById<Button>(R.id.btnSetMeeting)
+//        val btnReview = view.findViewById<Button>(R.id.btnReview)
+//    }
+//
+//    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+//        val view = LayoutInflater.from(parent.context)
+//            .inflate(R.layout.item_student_notification, parent, false)
+//        return ViewHolder(view)
+//    }
+//
+//    override fun getItemCount(): Int = list.size
+//
 //    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
 //        val item = list[position]
 //        holder.tvTime.text = formatTime(item.timestamp)
-//        holder.tvMessage.text = when(item.type){
+//
+//        holder.tvMessage.text = when (item.type) {
 //            "meeting_status" -> item.message
 //            "interest" -> "${item.tutorName} is interested in your job (ID: ${item.jobId})"
 //            "meeting_completed" -> "Meeting with ${item.tutorName}.Please rate your tutor."
@@ -200,49 +163,91 @@ class StudentNotificationAdapter(val list: List<NotificationModel>, val onSetMee
 //        holder.btnSetMeeting.visibility = View.GONE
 //        holder.btnReview.visibility = View.GONE
 //
-//        when(item.type){
-//            "interest" -> {
-//                holder.btnViewTutorDetails.visibility = View.VISIBLE
-//                holder.btnSetMeeting.visibility = View.VISIBLE
+//        val auth = FirebaseAuth.getInstance()
+//        val studentId = auth.currentUser?.uid ?: return
 //
-//                holder.btnViewTutorDetails.setOnClickListener {
-//                    Toast.makeText(holder.itemView.context, "View Profile", Toast.LENGTH_SHORT).show()
-//                }
-//                holder.btnSetMeeting.setOnClickListener {
-//                    onSetMeetingClick(item.jobId, item.tutorId)
-//                }
-//            }
-//            "meeting_completed" -> {
-//                holder.btnReview.visibility = View.VISIBLE
-//                holder.btnReview.setOnClickListener {
-//                    onReviewClick(item)
-//                }
-//            }
+//        holder.btnViewTutorDetails.visibility = View.VISIBLE
 //
+//        holder.btnViewTutorDetails.setOnClickListener {
+//            Toast.makeText(
+//                holder.itemView.context,
+//                "View Profile",
+//                Toast.LENGTH_SHORT
+//            ).show()
 //        }
 //
-////        if(item.type == "meeting_status"){
-////            holder.btnSetMeeting.visibility= View.GONE
-////            holder.btnViewTutorDetails.visibility= View.GONE
-////        }else {
-////            holder.btnSetMeeting.visibility = View.VISIBLE
-////            holder.btnViewTutorDetails.visibility = View.VISIBLE
-////
-////            holder.btnViewTutorDetails.setOnClickListener {
-////                Toast.makeText(holder.itemView.context, "View Profile", Toast.LENGTH_SHORT).show()
-////            }
-////
-////            holder.btnSetMeeting.setOnClickListener {
-//////            Toast.makeText(holder.itemView.context, "Set Meeting", Toast.LENGTH_SHORT).show()
-////                onSetMeetingClick(item.jobId, item.tutorId)
-////            }
-////        }
-//      }
-
-    fun formatTime(timestamp: Long): String {
-        val date = Date(timestamp)
-        val format = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
-        return format.format(date)
-    }
-
-}
+//        if (item.type == "meeting_completed") {
+//            holder.btnReview.visibility = View.VISIBLE
+//
+//            holder.btnReview.setOnClickListener {
+//                onReviewClick(item)
+//            }
+//
+//            return
+//        }
+//
+//        if (item.type == "interest") {
+//
+//            FirebaseDatabase.getInstance()
+//                .getReference("Meetings")
+//                .get()
+//                .addOnSuccessListener { snapshot ->
+//
+//                    var meetingFound: Meeting? = null
+//
+//                    for (data in snapshot.children) {
+//
+//                        val meeting = data.getValue(Meeting::class.java)
+//
+//                        if (
+//                            meeting != null &&
+//                            meeting.studentId == studentId &&
+//                            meeting.tutorId == item.tutorId &&
+//                            meeting.jobId == item.jobId
+//                        ) {
+//                            meetingFound = meeting
+//                            break
+//                        }
+//                    }
+//
+//                    if (meetingFound == null) {
+//
+//                        holder.btnSetMeeting.visibility = View.VISIBLE
+//
+//                    } else {
+//
+//                        when (meetingFound.status.lowercase()) {
+//
+//                            "pending" -> {
+//                                holder.btnSetMeeting.visibility = View.GONE
+//                            }
+//
+//                            "accepted" -> {
+//                                holder.btnReview.visibility = View.VISIBLE
+//
+//                                holder.btnReview.setOnClickListener {
+//                                    onReviewClick(item)
+//                                }
+//
+//                            }
+//
+//                            "rejected" -> {
+//                                holder.btnSetMeeting.visibility = View.VISIBLE
+//                            }
+//                        }
+//                    }
+//                }
+//
+//            holder.btnSetMeeting.setOnClickListener {
+//                onSetMeetingClick(item.jobId, item.tutorId)
+//            }
+//        }
+//    }
+//
+//    fun formatTime(timestamp: Long): String {
+//        val date = Date(timestamp)
+//        val format = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
+//        return format.format(date)
+//    }
+//
+//}

@@ -28,6 +28,8 @@ class StudentNotificationFragment : Fragment(R.layout.fragment_student_notificat
     lateinit var tvEmpty: TextView
 
     val list = mutableListOf<NotificationModel>()
+    private var notificationsListener: ValueEventListener? = null
+    private var badgeListener: ValueEventListener? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,71 +47,155 @@ class StudentNotificationFragment : Fragment(R.layout.fragment_student_notificat
         auth = FirebaseAuth.getInstance()
         db = FirebaseDatabase.getInstance().reference
 
+        recyclerView.adapter = StudentNotificationAdapter(
+            list = list,
+            onSetMeetingClick = { jobId, tutorId ->
+                showMeetingDialog(jobId, tutorId)
+            },
+            onReviewClick = { notification ->
+                showReviewDialog(notification)
+            }
+        )
+
+
         loadNotifications()
         updateBadgeCount()
     }
 
     fun loadNotifications(){
-        val userId = auth.currentUser?.uid?:return
+        val userId = auth.currentUser?.uid ?: return
 
-        db.child("Notifications").child(userId).addValueEventListener(object: ValueEventListener {
+        notificationsListener?.let {
+            db.child("Notifications").child(userId).removeEventListener(it)
+        }
+
+        notificationsListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                list.clear()
-                if(snapshot.exists()) {
-                    for (data in snapshot.children) {
-                        val notification = data.getValue(NotificationModel::class.java)
-                        if (notification != null) {
-                            list.add(notification)
-                        }
+                if (!isAdded) return
 
+                list.clear()
+
+                for (data in snapshot.children) {
+                    val notification = data.getValue(NotificationModel::class.java)
+                    if (notification != null) {
+                        list.add(notification)
                     }
                 }
 
                 list.sortByDescending { it.timestamp }
-                if(list.isEmpty()){
+                recyclerView.adapter?.notifyDataSetChanged()
+
+                if (list.isEmpty()) {
                     tvEmpty.visibility = View.VISIBLE
                     recyclerView.visibility = View.GONE
-                }else{
+                } else {
                     tvEmpty.visibility = View.GONE
                     recyclerView.visibility = View.VISIBLE
-                    recyclerView.adapter = StudentNotificationAdapter(
-                        list, onSetMeetingClick = {jobId, tutorId->
-                            showMeetingDialog(jobId, tutorId) },
-
-                            onReviewClick = { notification ->
-                                showReviewDialog(notification)
-                            })
-
-                    }
-
                 }
-            override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(requireContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show()
             }
 
-        })
+            override fun onCancelled(error: DatabaseError) {
+                if (!isAdded) return
+                Toast.makeText(
+                    requireContext(),
+                    "Failed to load notifications",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+
+        db.child("Notifications").child(userId)
+            .addValueEventListener(notificationsListener as ValueEventListener)
+//        val userId = auth.currentUser?.uid?:return
+//
+//        db.child("Notifications").child(userId).addValueEventListener(object: ValueEventListener {
+//            override fun onDataChange(snapshot: DataSnapshot) {
+//                list.clear()
+//                if(snapshot.exists()) {
+//                    for (data in snapshot.children) {
+//                        val notification = data.getValue(NotificationModel::class.java)
+//                        if (notification != null) {
+//                            list.add(notification)
+//                        }
+//
+//                    }
+//                }
+//
+//                list.sortByDescending { it.timestamp }
+//                if(list.isEmpty()){
+//                    tvEmpty.visibility = View.VISIBLE
+//                    recyclerView.visibility = View.GONE
+//                }else{
+//                    tvEmpty.visibility = View.GONE
+//                    recyclerView.visibility = View.VISIBLE
+//                    recyclerView.adapter = StudentNotificationAdapter(
+//                        list, onSetMeetingClick = {jobId, tutorId->
+//                            showMeetingDialog(jobId, tutorId) },
+//
+//                            onReviewClick = { notification ->
+//                                showReviewDialog(notification)
+//                            })
+//
+//                    }
+//
+//                }
+//            override fun onCancelled(error: DatabaseError) {
+//                Toast.makeText(requireContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show()
+//            }
+//
+//        })
     }
 
     fun updateBadgeCount(){
-        val studentId = auth.currentUser?.uid?:return
 
-        db.child("Notifications").child(studentId).addValueEventListener(object : ValueEventListener{
+        val studentId = auth.currentUser?.uid ?: return
+
+        badgeListener?.let {
+            db.child("Notifications").child(studentId).removeEventListener(it)
+        }
+
+        badgeListener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
+                if (!isAdded) return
+
                 var count = 0
-                for(data in snapshot.children){
+                for (data in snapshot.children) {
                     val notification = data.getValue(NotificationModel::class.java)
-                    if(notification != null && !notification.isRead){
+                    if (notification != null && !notification.isRead) {
                         count++
                     }
                 }
-                (activity as StudentDashboard).updateBadge(count)
 
+                (activity as? StudentDashboard)?.updateBadge(count)
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(requireContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show()
+                if (!isAdded) return
+                Toast.makeText(requireContext(), "Failed to load notification count", Toast.LENGTH_SHORT).show()
             }
-        })
+        }
+
+        db.child("Notifications").child(studentId)
+            .addValueEventListener(badgeListener as ValueEventListener)
+//        val studentId = auth.currentUser?.uid?:return
+//
+//        db.child("Notifications").child(studentId).addValueEventListener(object : ValueEventListener{
+//            override fun onDataChange(snapshot: DataSnapshot) {
+//                var count = 0
+//                for(data in snapshot.children){
+//                    val notification = data.getValue(NotificationModel::class.java)
+//                    if(notification != null && !notification.isRead){
+//                        count++
+//                    }
+//                }
+//                (activity as StudentDashboard).updateBadge(count)
+//
+//            }
+//
+//            override fun onCancelled(error: DatabaseError) {
+//                Toast.makeText(requireContext(), "Failed to load notifications", Toast.LENGTH_SHORT).show()
+//            }
+//        })
     }
 
     fun showMeetingDialog(jobId:Int, tutorId:String){
@@ -124,49 +210,109 @@ class StudentNotificationFragment : Fragment(R.layout.fragment_student_notificat
         var selectedTime = ""
 
         btnPickDate.setOnClickListener {
-
-            DatePickerDialog(requireContext(), { _, year, month, day ->
-                selectedDate = "$day/${month+1}/$year"
-                btnPickDate.text = selectedDate
-            }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
+            DatePickerDialog(
+                requireContext(),
+                { _, year, month, day ->
+                    selectedDate = "$day/${month + 1}/$year"
+                    btnPickDate.text = selectedDate
+                },
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
+            ).show()
         }
 
         btnPickTime.setOnClickListener {
-
-            TimePickerDialog(requireContext(), { _, hour, minute ->
-                selectedTime = String.format("%02d:%02d", hour, minute)
-                btnPickTime.text = selectedTime
-            }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), false).show()
+            TimePickerDialog(
+                requireContext(),
+                { _, hour, minute ->
+                    selectedTime = String.format("%02d:%02d", hour, minute)
+                    btnPickTime.text = selectedTime
+                },
+                calendar.get(Calendar.HOUR_OF_DAY),
+                calendar.get(Calendar.MINUTE),
+                false
+            ).show()
         }
 
-        AlertDialog.Builder(requireContext()).setTitle("Set Meeting").setView(view)
-            .setPositiveButton("Confirm"){_,_->
+        AlertDialog.Builder(requireContext())
+            .setTitle("Set Meeting")
+            .setView(view)
+            .setPositiveButton("Confirm") { _, _ ->
                 val location = etLocation.text.toString().trim()
-                if(location.isEmpty() || selectedDate.isEmpty() || selectedTime.isEmpty()){
+                if (location.isEmpty() || selectedDate.isEmpty() || selectedTime.isEmpty()) {
                     Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
 
                 saveMeeting(jobId, tutorId, selectedDate, selectedTime, location)
             }
-            .setNegativeButton("Cancel", null).show()
+            .setNegativeButton("Cancel", null)
+            .show()
+
+//        val view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_set_meeting, null)
+//
+//        val etLocation = view.findViewById<EditText>(R.id.etLocation)
+//        val btnPickDate = view.findViewById<Button>(R.id.btnPickDate)
+//        val btnPickTime = view.findViewById<Button>(R.id.btnPickTime)
+//
+//        val calendar = Calendar.getInstance()
+//        var selectedDate = ""
+//        var selectedTime = ""
+//
+//        btnPickDate.setOnClickListener {
+//
+//            DatePickerDialog(requireContext(), { _, year, month, day ->
+//                selectedDate = "$day/${month+1}/$year"
+//                btnPickDate.text = selectedDate
+//            }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH)).show()
+//        }
+//
+//        btnPickTime.setOnClickListener {
+//
+//            TimePickerDialog(requireContext(), { _, hour, minute ->
+//                selectedTime = String.format("%02d:%02d", hour, minute)
+//                btnPickTime.text = selectedTime
+//            }, calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), false).show()
+//        }
+//
+//        AlertDialog.Builder(requireContext()).setTitle("Set Meeting").setView(view)
+//            .setPositiveButton("Confirm"){_,_->
+//                val location = etLocation.text.toString().trim()
+//                if(location.isEmpty() || selectedDate.isEmpty() || selectedTime.isEmpty()){
+//                    Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show()
+//                    return@setPositiveButton
+//                }
+//
+//                saveMeeting(jobId, tutorId, selectedDate, selectedTime, location)
+//            }
+//            .setNegativeButton("Cancel", null).show()
 
     }
 
     fun saveMeeting(jobId: Int, tutorId: String, date:String, time:String, location:String){
-        db= FirebaseDatabase.getInstance().getReference("Meetings")
-        val meetingId = db.push().key?:return
+        val meetingRef = db.child("Meetings")
+        val meetingId = meetingRef.push().key ?: return
+        val studentId = auth.currentUser?.uid ?: return
 
-        val studentId = auth.currentUser?.uid?:return
+        db.child("Students").child(studentId).get()
+            .addOnSuccessListener { snapshot ->
+                val studentName = snapshot.child("name").value?.toString() ?: "Unknown"
+                val studentPhoneNumber = snapshot.child("phoneNumber").value?.toString().orEmpty()
 
-        val meetingRef = FirebaseDatabase.getInstance().getReference("Meetings")
-
-        FirebaseDatabase.getInstance().getReference("Students").child(studentId).child("name")
-            .get().addOnSuccessListener { snapshot ->
-                val studentName = snapshot.value.toString()?:"Unknown"
-                val studentPhoneNumber = auth.currentUser?.phoneNumber?:""
-
-                val meeting = Meeting(meetingId, jobId, studentId, studentName,studentPhoneNumber, tutorId, date, time, location,"pending", System.currentTimeMillis())
+                val meeting = Meeting(
+                    meetingId = meetingId,
+                    jobId = jobId,
+                    studentId = studentId,
+                    studentName = studentName,
+                    studentPhoneNumber = studentPhoneNumber,
+                    tutorId = tutorId,
+                    date = date,
+                    time = time,
+                    location = location,
+                    status = "pending",
+                    createdAt = System.currentTimeMillis()
+                )
 
                 meetingRef.child(meetingId).setValue(meeting)
                     .addOnSuccessListener {
@@ -176,6 +322,32 @@ class StudentNotificationFragment : Fragment(R.layout.fragment_student_notificat
                         Toast.makeText(requireContext(), "Failed to set meeting", Toast.LENGTH_SHORT).show()
                     }
             }
+            .addOnFailureListener {
+                Toast.makeText(requireContext(), "Failed to load student data", Toast.LENGTH_SHORT).show()
+            }
+
+//        db= FirebaseDatabase.getInstance().getReference("Meetings")
+//        val meetingId = db.push().key?:return
+//
+//        val studentId = auth.currentUser?.uid?:return
+//
+//        val meetingRef = FirebaseDatabase.getInstance().getReference("Meetings")
+//
+//        FirebaseDatabase.getInstance().getReference("Students").child(studentId).child("name")
+//            .get().addOnSuccessListener { snapshot ->
+//                val studentName = snapshot.value.toString()?:"Unknown"
+//                val studentPhoneNumber = auth.currentUser?.phoneNumber?:""
+//
+//                val meeting = Meeting(meetingId, jobId, studentId, studentName,studentPhoneNumber, tutorId, date, time, location,"pending", System.currentTimeMillis())
+//
+//                meetingRef.child(meetingId).setValue(meeting)
+//                    .addOnSuccessListener {
+//                        Toast.makeText(requireContext(), "Meeting set", Toast.LENGTH_SHORT).show()
+//                    }
+//                    .addOnFailureListener {
+//                        Toast.makeText(requireContext(), "Failed to set meeting", Toast.LENGTH_SHORT).show()
+//                    }
+//            }
 
 //        val meeting = Meeting(meetingId, jobId, studentId, tutorId, date, time, location,"pending", System.currentTimeMillis())
 //
@@ -214,53 +386,107 @@ class StudentNotificationFragment : Fragment(R.layout.fragment_student_notificat
     }
 
     fun saveReview(tutorId: String, rating: Float, comment: String) {
-        val reviewRef = db.child("Reviews").push()
-        val review = mapOf(
-            "studentId" to auth.currentUser?.uid,
-            "tutorId" to tutorId,
-            "rating" to rating,
-            "comment" to comment,
-            "timestamp" to System.currentTimeMillis()
-        )
-        reviewRef.setValue(review).addOnSuccessListener {
-            updateTutorRating(tutorId, rating)
-            Toast.makeText(requireContext(), "Review submitted", Toast.LENGTH_SHORT).show()
-        }.addOnFailureListener {
-            Toast.makeText(requireContext(), "Failed to submit review", Toast.LENGTH_SHORT).show()
-        }
+        val studentId = auth.currentUser?.uid ?: return
+
+        db.child("Students").child(studentId).child("name").get()
+            .addOnSuccessListener { snapshot ->
+                val studentName = snapshot.value?.toString().orEmpty()
+                val reviewRef = db.child("Reviews").push()
+
+                val review = mapOf(
+                    "studentId" to studentId,
+                    "studentName" to studentName,
+                    "tutorId" to tutorId,
+                    "rating" to rating,
+                    "reviewText" to comment,
+                    "comment" to comment,
+                    "moderationStatus" to "pending",
+                    "timestamp" to System.currentTimeMillis()
+                )
+
+                reviewRef.setValue(review)
+                    .addOnSuccessListener {
+                        updateTutorRating(tutorId, rating)
+                        Toast.makeText(requireContext(), "Review submitted", Toast.LENGTH_SHORT).show()
+                    }
+                    .addOnFailureListener {
+                        Toast.makeText(requireContext(), "Failed to submit review", Toast.LENGTH_SHORT).show()
+                    }
+            }
+            .addOnFailureListener {
+                Toast.makeText(requireContext(), "Failed to load student data", Toast.LENGTH_SHORT).show()
+            }
+
+//        val reviewRef = db.child("Reviews").push()
+//        val review = mapOf(
+//            "studentId" to auth.currentUser?.uid,
+//            "tutorId" to tutorId,
+//            "rating" to rating,
+//            "comment" to comment,
+//            "timestamp" to System.currentTimeMillis()
+//        )
+//        reviewRef.setValue(review).addOnSuccessListener {
+//            updateTutorRating(tutorId, rating)
+//            Toast.makeText(requireContext(), "Review submitted", Toast.LENGTH_SHORT).show()
+//        }.addOnFailureListener {
+//            Toast.makeText(requireContext(), "Failed to submit review", Toast.LENGTH_SHORT).show()
+//        }
     }
 
     fun updateTutorRating(tutorId: String,newRating: Float) {
-
         val tutorRef = db.child("Tutors").child(tutorId)
-        tutorRef.get().addOnSuccessListener { snapshot ->
-            val currentRating =
-                snapshot.child("rating").value.toString().toFloatOrNull() ?: 0f
 
-            val totalReviews =
-                snapshot.child("totalReviews").value.toString().toIntOrNull() ?: 0
+        tutorRef.get()
+            .addOnSuccessListener { snapshot ->
+                val currentRating = snapshot.child("rating").value.toString().toFloatOrNull() ?: 0f
+                val totalReviews = snapshot.child("totalReviews").value.toString().toIntOrNull() ?: 0
+                val updatedTotalReviews = totalReviews + 1
+                val updatedRating = ((currentRating * totalReviews) + newRating) / updatedTotalReviews
 
-            val updatedTotalReviews = totalReviews + 1
+                val updates = mapOf(
+                    "rating" to updatedRating,
+                    "totalReviews" to updatedTotalReviews
+                )
 
-            val updatedRating =
-                ((currentRating * totalReviews) + newRating) / updatedTotalReviews
-
-            val updates = mapOf(
-                "rating" to updatedRating,
-                "totalReviews" to updatedTotalReviews
-            )
-
-            tutorRef.updateChildren(updates)
-                .addOnSuccessListener {
-                    Toast.makeText(requireContext(), "Tutor rating updated", Toast.LENGTH_SHORT).show()
-                }
-                .addOnFailureListener {
-                    Toast.makeText(requireContext(), "Failed to update tutor rating", Toast.LENGTH_SHORT).show()
-                }
-        }
+                tutorRef.updateChildren(updates)
+                    .addOnFailureListener {
+                        Toast.makeText(requireContext(), "Failed to update tutor rating", Toast.LENGTH_SHORT).show()
+                    }
+            }
             .addOnFailureListener {
                 Toast.makeText(requireContext(), "Failed to load tutor data", Toast.LENGTH_SHORT).show()
             }
+
+
+//        val tutorRef = db.child("Tutors").child(tutorId)
+//        tutorRef.get().addOnSuccessListener { snapshot ->
+//            val currentRating =
+//                snapshot.child("rating").value.toString().toFloatOrNull() ?: 0f
+//
+//            val totalReviews =
+//                snapshot.child("totalReviews").value.toString().toIntOrNull() ?: 0
+//
+//            val updatedTotalReviews = totalReviews + 1
+//
+//            val updatedRating =
+//                ((currentRating * totalReviews) + newRating) / updatedTotalReviews
+//
+//            val updates = mapOf(
+//                "rating" to updatedRating,
+//                "totalReviews" to updatedTotalReviews
+//            )
+//
+//            tutorRef.updateChildren(updates)
+//                .addOnSuccessListener {
+//                    Toast.makeText(requireContext(), "Tutor rating updated", Toast.LENGTH_SHORT).show()
+//                }
+//                .addOnFailureListener {
+//                    Toast.makeText(requireContext(), "Failed to update tutor rating", Toast.LENGTH_SHORT).show()
+//                }
+//        }
+//            .addOnFailureListener {
+//                Toast.makeText(requireContext(), "Failed to load tutor data", Toast.LENGTH_SHORT).show()
+//            }
 //        db.child("Reviews").orderByChild("tutorId").equalTo(tutorId).get()
 //            .addOnSuccessListener { snapshot ->
 //                var totalRating = 0f
@@ -283,6 +509,25 @@ class StudentNotificationFragment : Fragment(R.layout.fragment_student_notificat
 //
 //            }
     }
+
+    override fun onDestroyView() {
+        val userId = auth.currentUser?.uid
+
+        if (userId != null) {
+            notificationsListener?.let {
+                db.child("Notifications").child(userId).removeEventListener(it)
+            }
+            badgeListener?.let {
+                db.child("Notifications").child(userId).removeEventListener(it)
+            }
+        }
+
+        notificationsListener = null
+        badgeListener = null
+
+        super.onDestroyView()
+    }
+
 
 
 

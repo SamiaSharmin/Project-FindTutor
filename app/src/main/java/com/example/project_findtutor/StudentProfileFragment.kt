@@ -207,7 +207,7 @@ class StudentProfileFragment : Fragment(R.layout.fragment_student_profile) {
         val reportData = ProblemReport(
             reportId = reportId,
             userId = currentUser.uid,
-            userRole = "tutor",
+            userRole = "student",
             userName = name,
             userEmail = email,
             userPhoneNumber = phoneNumber,
