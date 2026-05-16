@@ -11,12 +11,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.button.MaterialButton
 import java.util.Locale
 
-class AdminPostsAdapter (private val onCloseClick: (Post) -> Unit,private val onHideClick: (Post) -> Unit, private val onRemoveClick: (Post) -> Unit, private val onStatusMenuClick: (Post, String) -> Unit
+class AdminPostsAdapter (private val onCloseClick: (AdminPostItem) -> Unit,private val onHideClick: (AdminPostItem) -> Unit, private val onRemoveClick: (AdminPostItem) -> Unit, private val onStatusMenuClick: (AdminPostItem, String) -> Unit
 ) : RecyclerView.Adapter<AdminPostsAdapter.AdminPostViewHolder>() {
 
-    private val posts = mutableListOf<Post>()
+    private val posts = mutableListOf<AdminPostItem>()
 
-    fun submitList(newPosts: List<Post>) {
+    fun submitList(newPosts: List<AdminPostItem>) {
         posts.clear()
         posts.addAll(newPosts)
         notifyDataSetChanged()
@@ -31,7 +31,7 @@ class AdminPostsAdapter (private val onCloseClick: (Post) -> Unit,private val on
 
     override fun onBindViewHolder(holder: AdminPostViewHolder, position: Int) {
         holder.bind(
-            post = posts[position],
+            item = posts[position],
             onCloseClick = onCloseClick,
             onHideClick = onHideClick,
             onRemoveClick = onRemoveClick,
@@ -45,6 +45,7 @@ class AdminPostsAdapter (private val onCloseClick: (Post) -> Unit,private val on
 
         private val tvPostTitle: TextView = itemView.findViewById(R.id.tvPostTitle)
         private val tvPostSubjects: TextView = itemView.findViewById(R.id.tvPostSubjects)
+        private val tvPostStudentName: TextView = itemView.findViewById(R.id.tvPostStudentName)
         private val tvPostStatus: TextView = itemView.findViewById(R.id.tvPostStatus)
         private val btnMorePostOptions: TextView = itemView.findViewById(R.id.btnMorePostOptions)
 
@@ -62,14 +63,16 @@ class AdminPostsAdapter (private val onCloseClick: (Post) -> Unit,private val on
         private val btnRemovePost: MaterialButton = itemView.findViewById(R.id.btnRemovePost)
 
         fun bind(
-            post: Post,
-            onCloseClick: (Post) -> Unit,
-            onHideClick: (Post) -> Unit,
-            onRemoveClick: (Post) -> Unit,
-            onStatusMenuClick: (Post, String) -> Unit
+            item: AdminPostItem,
+            onCloseClick: (AdminPostItem) -> Unit,
+            onHideClick: (AdminPostItem) -> Unit,
+            onRemoveClick: (AdminPostItem) -> Unit,
+            onStatusMenuClick: (AdminPostItem, String) -> Unit
         ) {
+            val post = item.post
             tvPostTitle.text = post.title.ifBlank { "Untitled Post" }
             tvPostSubjects.text = post.subjects.ifBlank { "Subject not provided" }
+            tvPostStudentName.text = "Posted by ${item.studentName}"
 
             tvPostSalary.text = if (post.salary > 0) {
                 "${post.salary} BDT"
@@ -90,26 +93,26 @@ class AdminPostsAdapter (private val onCloseClick: (Post) -> Unit,private val on
             styleStatusBadge(tvPostStatus, status)
 
             btnClosePost.setOnClickListener {
-                onCloseClick(post)
+                onCloseClick(item)
             }
 
             btnHidePost.setOnClickListener {
-                onHideClick(post)
+                onHideClick(item)
             }
 
             btnRemovePost.setOnClickListener {
-                onRemoveClick(post)
+                onRemoveClick(item)
             }
 
             btnMorePostOptions.setOnClickListener {
-                showPostMenu(post, it, onStatusMenuClick)
+                showPostMenu(item, it, onStatusMenuClick)
             }
         }
 
         private fun showPostMenu(
-            post: Post,
+            item: AdminPostItem,
             anchor: View,
-            onStatusMenuClick: (Post, String) -> Unit
+            onStatusMenuClick: (AdminPostItem, String) -> Unit
         ) {
             val popup = PopupMenu(anchor.context, anchor)
 
@@ -118,12 +121,12 @@ class AdminPostsAdapter (private val onCloseClick: (Post) -> Unit,private val on
             popup.menu.add("Hide Post")
             popup.menu.add("Remove Post")
 
-            popup.setOnMenuItemClickListener { item ->
-                when (item.title.toString()) {
-                    "Mark Open" -> onStatusMenuClick(post, "open")
-                    "Close Post" -> onStatusMenuClick(post, "closed")
-                    "Hide Post" -> onStatusMenuClick(post, "hidden")
-                    "Remove Post" -> onStatusMenuClick(post, "removed")
+            popup.setOnMenuItemClickListener { menuitem ->
+                when (menuitem.title.toString()) {
+                    "Mark Open" -> onStatusMenuClick(item, "open")
+                    "Close Post" -> onStatusMenuClick(item, "closed")
+                    "Hide Post" -> onStatusMenuClick(item, "hidden")
+                    "Remove Post" -> onStatusMenuClick(item, "removed")
                 }
                 true
             }

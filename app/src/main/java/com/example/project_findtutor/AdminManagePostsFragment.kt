@@ -47,7 +47,7 @@ class AdminManagePostsFragment : Fragment(R.layout.fragment_admin_manage_posts) 
 
     private lateinit var adapter: AdminPostsAdapter
 
-    private val allPosts = mutableListOf<Post>()
+    private val allPosts = mutableListOf<AdminPostItem>()
 
     private var selectedFilter = PostFilter.ALL
     private var searchQuery = ""
@@ -180,13 +180,26 @@ class AdminManagePostsFragment : Fragment(R.layout.fragment_admin_manage_posts) 
                 allPosts.clear()
 
                 for (postSnapshot in snapshot.children) {
-                    allPosts.add(parsePost(postSnapshot))
+//                    allPosts.add(parsePost(postSnapshot))
+                    val post = parsePost(postSnapshot)
+                    val status = normalizeStatus(postSnapshot.getStringValue("status"))
+                    val item = AdminPostItem(
+                        post = post,
+                        studentName = "Unknown Student",
+                        status = status
+                    )
+
+                    allPosts.add(item)
                 }
 
-                allPosts.sortByDescending { it.jobId }
+                allPosts.sortByDescending { item -> item.post.jobId }
 
                 updateChipLabels()
                 applyFilters()
+
+                allPosts.forEach { item ->
+                    fetchStudentNameForPost(item.post.userId, item.post.postId)
+                }
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -219,8 +232,61 @@ class AdminManagePostsFragment : Fragment(R.layout.fragment_admin_manage_posts) 
             ),
             description = snapshot.getStringValue("description"),
             postedDate = snapshot.getStringValue("postedDate"),
-            status = normalizeStatus(snapshot.getStringValue("status"))
+//            status = normalizeStatus(snapshot.getStringValue("status"))
         )
+    }
+
+    private fun fetchStudentNameForPost(userId: String, postId: String) {
+        if (userId.isBlank() || postId.isBlank()) return
+
+        db.child("Users").child(userId).get()
+            .addOnSuccessListener { userSnapshot ->
+                val nameFromUsers = userSnapshot.getStringValue("name")
+
+                if (nameFromUsers.isNotBlank()) {
+                    updatePostStudentName(postId, nameFromUsers)
+                } else {
+                    fetchStudentNameFromStudents(userId, postId)
+                }
+            }
+            .addOnFailureListener {
+                fetchStudentNameFromStudents(userId, postId)
+            }
+    }
+
+    private fun fetchStudentNameFromStudents(userId: String, postId: String) {
+        db.child("Students")
+            .orderByChild("userId")
+            .equalTo(userId)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                var studentName = ""
+
+                for (studentSnapshot in snapshot.children) {
+                    studentName = studentSnapshot.getStringValue("name")
+                    if (studentName.isNotBlank()) break
+                }
+
+                if (studentName.isNotBlank()) {
+                    updatePostStudentName(postId, studentName)
+                }
+            }
+    }
+
+    private fun updatePostStudentName(postId: String, studentName: String) {
+        val index = allPosts.indexOfFirst { item ->
+            item.post.postId == postId
+        }
+
+        if (index == -1) return
+
+        val oldItem = allPosts[index]
+
+        allPosts[index] = oldItem.copy(
+            studentName = studentName
+        )
+
+        applyFilters()
     }
 
     private fun applyFilters() {
@@ -250,7 +316,7 @@ class AdminManagePostsFragment : Fragment(R.layout.fragment_admin_manage_posts) 
         }
     }
 
-    private fun matchesSelectedFilter(post: Post): Boolean {
+    private fun matchesSelectedFilter(post: AdminPostItem): Boolean {
         val status = normalizeStatus(post.status)
 
         return when (selectedFilter) {
@@ -262,8 +328,9 @@ class AdminManagePostsFragment : Fragment(R.layout.fragment_admin_manage_posts) 
         }
     }
 
-    private fun matchesSearchQuery(post: Post, query: String): Boolean {
+    private fun matchesSearchQuery(item: AdminPostItem, query: String): Boolean {
         if (query.isBlank()) return true
+        val post = item.post
 
         return post.title.lowercase(Locale.ROOT).contains(query) ||
                 post.subjects.lowercase(Locale.ROOT).contains(query) ||
@@ -273,10 +340,12 @@ class AdminManagePostsFragment : Fragment(R.layout.fragment_admin_manage_posts) 
                 post.tutorGender.lowercase(Locale.ROOT).contains(query) ||
                 post.description.lowercase(Locale.ROOT).contains(query) ||
                 post.userId.lowercase(Locale.ROOT).contains(query) ||
+                item.studentName.lowercase(Locale.ROOT).contains(query) ||
                 post.jobId.toString().contains(query)
     }
 
-    private fun updatePostStatus(post: Post, newStatus: String) {
+    private fun updatePostStatus(item: AdminPostItem, newStatus: String) {
+        val post = item.post
         val normalizedStatus = normalizeStatus(newStatus)
 
         val updates = hashMapOf<String, Any?>()
@@ -289,6 +358,7 @@ class AdminManagePostsFragment : Fragment(R.layout.fragment_admin_manage_posts) 
                 "postId" to post.postId,
                 "jobId" to post.jobId,
                 "userId" to post.userId,
+                "studentName" to item.studentName,
                 "oldStatus" to post.status,
                 "newStatus" to normalizedStatus,
                 "timestamp" to ServerValue.TIMESTAMP
@@ -297,31 +367,19 @@ class AdminManagePostsFragment : Fragment(R.layout.fragment_admin_manage_posts) 
 
         db.updateChildren(updates)
             .addOnSuccessListener {
-                Toast.makeText(
-                    requireContext(),
-                    "Post marked as ${displayStatus(normalizedStatus)}",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(requireContext(), "Post marked as ${displayStatus(normalizedStatus)}", Toast.LENGTH_SHORT).show()
             }
             .addOnFailureListener { error ->
-                Toast.makeText(
-                    requireContext(),
-                    error.message ?: "Failed to update post",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(requireContext(), error.message ?: "Failed to update post", Toast.LENGTH_SHORT).show()
             }
     }
 
     private fun updateChipLabels() {
         tvChipAllPosts.text = "All Posts (${formatNumber(allPosts.size)})"
-        tvChipOpenPosts.text =
-            "Open (${formatNumber(allPosts.count { normalizeStatus(it.status) == "open" })})"
-        tvChipHiddenPosts.text =
-            "Hidden (${formatNumber(allPosts.count { normalizeStatus(it.status) == "hidden" })})"
-        tvChipClosedPosts.text =
-            "Closed (${formatNumber(allPosts.count { normalizeStatus(it.status) == "closed" })})"
-        tvChipRemovedPosts.text =
-            "Removed (${formatNumber(allPosts.count { normalizeStatus(it.status) == "removed" })})"
+        tvChipOpenPosts.text = "Open (${formatNumber(allPosts.count { normalizeStatus(it.status) == "open" })})"
+        tvChipHiddenPosts.text = "Hidden (${formatNumber(allPosts.count { normalizeStatus(it.status) == "hidden" })})"
+        tvChipClosedPosts.text = "Closed (${formatNumber(allPosts.count { normalizeStatus(it.status) == "closed" })})"
+        tvChipRemovedPosts.text = "Removed (${formatNumber(allPosts.count { normalizeStatus(it.status) == "removed" })})"
     }
 
     private fun updateChipUi() {

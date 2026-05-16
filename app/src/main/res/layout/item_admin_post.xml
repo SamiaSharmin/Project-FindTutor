@@ -48,6 +48,16 @@
                     android:textColor="#596174"
                     android:textSize="12sp"
                     tools:text="Mathematics, Physics" />
+
+                <TextView
+                    android:id="@+id/tvPostStudentName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="#374151"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    tools:text="Posted by Sara Ahmed" />
             </LinearLayout>
 
             <TextView
