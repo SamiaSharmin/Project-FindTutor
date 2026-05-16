@@ -35,16 +35,10 @@ class StudentNotificationAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = list[position]
+        val effectiveType = getEffectiveType(item)
 
         holder.tvTime.text = formatTime(item.timestamp)
-        holder.tvMessage.text = when (item.type) {
-            "meeting_status" -> item.message
-            "interest" -> "${item.tutorName} is interested in your job (ID: ${item.jobId})"
-            "meeting_completed" -> "Meeting with ${item.tutorName}. Please rate your tutor."
-            "report_investigation_started" -> item.message.ifBlank { "Your report is now under investigation by the admin team." }
-            "review_investigation_started" -> item.message.ifBlank { "Your review is now under investigation by the admin team." }
-            else -> item.message.ifBlank { "You have a new notification." }
-        }
+        holder.tvMessage.text = getNotificationMessage(item, effectiveType)
 
         holder.btnViewTutorDetails.visibility = View.GONE
         holder.btnSetMeeting.visibility = View.GONE
@@ -54,11 +48,89 @@ class StudentNotificationAdapter(
         holder.btnSetMeeting.setOnClickListener(null)
         holder.btnReview.setOnClickListener(null)
 
-        when (item.type) {
+        when (effectiveType) {
             "interest" -> bindInterestNotification(holder, item)
             "meeting_completed" -> bindMeetingCompletedNotification(holder, item)
         }
     }
+
+    private fun getEffectiveType(item: NotificationModel): String {
+        /*
+         * This fixes old Firebase notifications that were saved like:
+         * jobId, tutorId, tutorName, timestamp, isRead
+         * but without type = "interest".
+         */
+        return if (
+            item.type.isBlank() &&
+            item.jobId != 0 &&
+            item.tutorId.isNotBlank()
+        ) {
+            "interest"
+        } else {
+            item.type
+        }
+    }
+
+    private fun getNotificationMessage(item: NotificationModel, effectiveType: String): String {
+        return when (effectiveType) {
+            "interest" -> {
+                val tutorName = item.tutorName.ifBlank { "A tutor" }
+                "$tutorName is interested in your job (ID: ${item.jobId})"
+            }
+
+            "meeting_status" -> {
+                item.message.ifBlank { "Your meeting status has been updated." }
+            }
+
+            "meeting_completed" -> {
+                val tutorName = item.tutorName.ifBlank { "your tutor" }
+                "Meeting with $tutorName completed. Please rate your tutor."
+            }
+
+            "report_investigation_started" -> {
+                item.message.ifBlank {
+                    "Your report is now under investigation by the admin team."
+                }
+            }
+
+            "review_investigation_started" -> {
+                item.message.ifBlank {
+                    "Your review is now under investigation by the admin team."
+                }
+            }
+
+            else -> {
+                item.message.ifBlank { "You have a new notification." }
+            }
+        }
+    }
+
+//    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+//        val item = list[position]
+//
+//        holder.tvTime.text = formatTime(item.timestamp)
+//        holder.tvMessage.text = when (item.type) {
+//            "meeting_status" -> item.message
+//            "interest" -> "${item.tutorName} is interested in your job (ID: ${item.jobId})"
+//            "meeting_completed" -> "Meeting with ${item.tutorName}. Please rate your tutor."
+//            "report_investigation_started" -> item.message.ifBlank { "Your report is now under investigation by the admin team." }
+//            "review_investigation_started" -> item.message.ifBlank { "Your review is now under investigation by the admin team." }
+//            else -> item.message.ifBlank { "You have a new notification." }
+//        }
+//
+//        holder.btnViewTutorDetails.visibility = View.GONE
+//        holder.btnSetMeeting.visibility = View.GONE
+//        holder.btnReview.visibility = View.GONE
+//
+//        holder.btnViewTutorDetails.setOnClickListener(null)
+//        holder.btnSetMeeting.setOnClickListener(null)
+//        holder.btnReview.setOnClickListener(null)
+//
+//        when (item.type) {
+//            "interest" -> bindInterestNotification(holder, item)
+//            "meeting_completed" -> bindMeetingCompletedNotification(holder, item)
+//        }
+//    }
 
     private fun bindInterestNotification(holder: ViewHolder, item: NotificationModel) {
         val studentId = FirebaseAuth.getInstance().currentUser?.uid ?: return
@@ -109,6 +181,9 @@ class StudentNotificationAdapter(
                         holder.btnReview.visibility = View.GONE
                     }
                 }
+            }
+            .addOnFailureListener {
+                Toast.makeText(holder.itemView.context, "Failed to check meeting status", Toast.LENGTH_SHORT).show()
             }
     }
 

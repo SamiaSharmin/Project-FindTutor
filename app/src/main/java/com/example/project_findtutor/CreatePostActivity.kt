@@ -194,11 +194,47 @@ class CreatePostActivity : AppCompatActivity() {
         val post = Post(postId,jobId, userId, title, location, studentClass, time, subjects, salary, days, studentGender, tutorGender, description,postedDate)
         db.child("Posts").child(jobId.toString()).setValue(post)
             .addOnSuccessListener {
+                sendPostCreatedAdminNotification(jobId, userId, title)
                 Toast.makeText(this, "Post created successfully! Job ID: $jobId", Toast.LENGTH_SHORT).show()
                 finish()
             }
             .addOnFailureListener {
                 Toast.makeText(this, "Error: ${it.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun sendPostCreatedAdminNotification(jobId: Int, userId: String, postTitle: String) {
+        db.child("Students").child(userId).child("name").get()
+            .addOnSuccessListener { snapshot ->
+                val studentName = snapshot.value?.toString().orEmpty()
+
+                AdminNotificationHelper.sendAdminNotification(
+                    db = db,
+                    title = "New tuition post created",
+                    message = if (studentName.isEmpty()) {
+                        "A student created a new post: $postTitle. Job ID: $jobId."
+                    } else {
+                        "$studentName created a new post: $postTitle. Job ID: $jobId."
+                    },
+                    type = AdminNotificationHelper.TYPE_NEW_POST,
+                    userId = userId,
+                    userRole = "student",
+                    userName = studentName,
+                    relatedId = jobId.toString(),
+                    relatedNode = "Posts"
+                )
+            }
+            .addOnFailureListener {
+                AdminNotificationHelper.sendAdminNotification(
+                    db = db,
+                    title = "New tuition post created",
+                    message = "A student created a new post: $postTitle. Job ID: $jobId.",
+                    type = AdminNotificationHelper.TYPE_NEW_POST,
+                    userId = userId,
+                    userRole = "student",
+                    relatedId = jobId.toString(),
+                    relatedNode = "Posts"
+                )
             }
     }
 

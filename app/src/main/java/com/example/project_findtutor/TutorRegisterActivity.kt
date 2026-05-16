@@ -51,6 +51,13 @@ class TutorRegisterActivity : AppCompatActivity() {
         preferredAreas = findViewById<EditText>(R.id.etPreferedAreas)
         btnTutorRegister = findViewById<Button>(R.id.btnTutorRegister)
 
+        tvTutorLogin = findViewById<Button>(R.id.tvTutorLogin)
+        tvTutorLogin.setOnClickListener {
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+        }
+
+
         btnTutorRegister.setOnClickListener {
 
             val nameStr = name.text.toString().trim()
@@ -101,15 +108,46 @@ class TutorRegisterActivity : AppCompatActivity() {
                 val userId = it.user!!.uid
                 val tutor = Tutor(userId, nameStr, emailStr, phoneNumberStr, qualificationStr, preferredAreasStr, 0f)
                 val user = User(userId, nameStr, emailStr, "tutor")
-                db.child("Users").child(userId).setValue(user)
-                db.child("Tutors").child(userId).setValue(tutor)
-                Toast.makeText(this, "Tutor registered successfully", Toast.LENGTH_SHORT).show()
-                startActivity(Intent(this, MainActivity::class.java))
-                finish()
+                val updates = hashMapOf<String, Any>(
+                    "Users/$userId" to user,
+                    "Tutors/$userId" to tutor
+                )
+
+                db.updateChildren(updates)
+                    .addOnSuccessListener {
+                        AdminNotificationHelper.sendAdminNotification(
+                            db = db,
+                            title = "New tutor registered",
+                            message = "$nameStr registered as a tutor.",
+                            type = AdminNotificationHelper.TYPE_NEW_USER,
+                            userId = userId,
+                            userRole = "tutor",
+                            userName = nameStr,
+                            relatedId = userId,
+                            relatedNode = "Tutors"
+                        )
+
+                        Toast.makeText(this, "Tutor registered successfully", Toast.LENGTH_SHORT).show()
+                        startActivity(Intent(this, MainActivity::class.java))
+                        finish()
+                    }
+                    .addOnFailureListener { exception ->
+                        Toast.makeText(this, exception.message, Toast.LENGTH_SHORT).show()
+                    }
             }
                 .addOnFailureListener {
                     Toast.makeText(this, it.message, Toast.LENGTH_SHORT).show()
                 }
+
+//                db.child("Users").child(userId).setValue(user)
+//                db.child("Tutors").child(userId).setValue(tutor)
+//                Toast.makeText(this, "Tutor registered successfully", Toast.LENGTH_SHORT).show()
+//                startActivity(Intent(this, MainActivity::class.java))
+//                finish()
+//            }
+//                .addOnFailureListener {
+//                    Toast.makeText(this, it.message, Toast.LENGTH_SHORT).show()
+//                }
 
 
 

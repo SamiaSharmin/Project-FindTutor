@@ -65,34 +65,102 @@ class TutorPostListFragment : Fragment(R.layout.fragment_tutor_post_list) {
             })
     }
 
-    fun markInterested(post:Post){
+    fun markInterested(post: Post) {
         val tutorId = auth.currentUser?.uid ?: return
         val studentId = post.userId
 
+        if (studentId.isBlank()) {
+            Toast.makeText(requireContext(), "Student ID not found", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         db.child("Tutors").child(tutorId).get()
-            .addOnSuccessListener { snapshot ->
-                val tutorName = snapshot.child("name").value.toString()
+            .addOnSuccessListener { tutorSnapshot ->
 
-                db.child("interests").child(post.jobId.toString()).child(tutorId).get().addOnSuccessListener {
-                    if(it.exists()){
-                        Toast.makeText(requireContext(), "Already marked interested", Toast.LENGTH_SHORT).show()
-                        return@addOnSuccessListener
-                    }else{
-                        val notification = mapOf("jobId" to post.jobId, "tutorId" to tutorId, "tutorName" to tutorName, "timestamp" to System.currentTimeMillis(), "isRead" to false)
+                val tutorName = tutorSnapshot.child("name").value?.toString().orEmpty()
+                    .ifBlank { "A tutor" }
 
-                        db.child("Notifications").child(studentId).push().setValue(notification)
-                        Toast.makeText(requireContext(), "Interested sent", Toast.LENGTH_SHORT).show()
+                val interestRef = db.child("interests")
+                    .child(post.jobId.toString())
+                    .child(tutorId)
+
+                interestRef.get()
+                    .addOnSuccessListener { interestSnapshot ->
+
+                        if (interestSnapshot.exists()) {
+                            Toast.makeText(
+                                requireContext(),
+                                "Already marked interested",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@addOnSuccessListener
+                        }
+
+                        interestRef.setValue(true)
+                            .addOnSuccessListener {
+
+                                val notification = mapOf(
+                                    "jobId" to post.jobId,
+                                    "tutorId" to tutorId,
+                                    "tutorName" to tutorName,
+                                    "message" to "$tutorName is interested in your job (ID: ${post.jobId})",
+                                    "type" to "interest",
+                                    "timestamp" to System.currentTimeMillis(),
+                                    "isRead" to false
+                                )
+
+                                db.child("Notifications")
+                                    .child(studentId)
+                                    .push()
+                                    .setValue(notification)
+                                    .addOnSuccessListener {
+                                        Toast.makeText(requireContext(), "Interested sent", Toast.LENGTH_SHORT).show()
+                                    }
+                                    .addOnFailureListener {
+                                        Toast.makeText(requireContext(), "Failed to send notification", Toast.LENGTH_SHORT).show()
+                                    }
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(requireContext(), "Failed to mark interested", Toast.LENGTH_SHORT).show()
+                            }
                     }
-                }
-
-
+                    .addOnFailureListener {
+                        Toast.makeText(requireContext(), "Failed to check interest status", Toast.LENGTH_SHORT).show()
+                    }
             }
-//        db.child("interests").child(post.jobId.toString()).child(tutorId)
-//            .setValue(true).addOnSuccessListener {
-//                Toast.makeText(requireContext(), "Interested marked", Toast.LENGTH_SHORT).show()
-//            }.addOnFailureListener {
-//                Toast.makeText(requireContext(), "Failed to mark interested", Toast.LENGTH_SHORT).show()
-//            }
+            .addOnFailureListener {
+                Toast.makeText(requireContext(), "Failed to load tutor data", Toast.LENGTH_SHORT).show()
+            }
     }
+
+//    fun markInterested(post:Post){
+//        val tutorId = auth.currentUser?.uid ?: return
+//        val studentId = post.userId
+//
+//        db.child("Tutors").child(tutorId).get()
+//            .addOnSuccessListener { snapshot ->
+//                val tutorName = snapshot.child("name").value.toString()
+//
+//                db.child("interests").child(post.jobId.toString()).child(tutorId).get().addOnSuccessListener {
+//                    if(it.exists()){
+//                        Toast.makeText(requireContext(), "Already marked interested", Toast.LENGTH_SHORT).show()
+//                        return@addOnSuccessListener
+//                    }else{
+//                        val notification = mapOf("jobId" to post.jobId, "tutorId" to tutorId, "tutorName" to tutorName, "timestamp" to System.currentTimeMillis(), "isRead" to false)
+//
+//                        db.child("Notifications").child(studentId).push().setValue(notification)
+//                        Toast.makeText(requireContext(), "Interested sent", Toast.LENGTH_SHORT).show()
+//                    }
+//                }
+//
+//
+//            }
+////        db.child("interests").child(post.jobId.toString()).child(tutorId)
+////            .setValue(true).addOnSuccessListener {
+////                Toast.makeText(requireContext(), "Interested marked", Toast.LENGTH_SHORT).show()
+////            }.addOnFailureListener {
+////                Toast.makeText(requireContext(), "Failed to mark interested", Toast.LENGTH_SHORT).show()
+////            }
+//    }
 
 }

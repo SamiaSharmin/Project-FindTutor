@@ -217,6 +217,17 @@ class TutorProfileFragment : Fragment(R.layout.fragment_tutor_profile) {
 
         reportRef.setValue(reportData)
             .addOnSuccessListener {
+                AdminNotificationHelper.sendAdminNotification(
+                    db = db,
+                    title = "New problem report",
+                    message = "$name submitted a problem report: $description",
+                    type = AdminNotificationHelper.TYPE_REPORT_GIVEN,
+                    userId = currentUser.uid,
+                    userRole = "tutor",
+                    userName = name,
+                    relatedId = reportId,
+                    relatedNode = "ProblemReports"
+                )
                 Toast.makeText(requireContext(), "Problem reported successfully", Toast.LENGTH_SHORT).show()
             }
             .addOnFailureListener { exception ->

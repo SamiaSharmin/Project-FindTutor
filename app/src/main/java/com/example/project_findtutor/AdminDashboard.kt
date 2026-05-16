@@ -76,8 +76,12 @@ class AdminDashboard : AppCompatActivity() {
 
     private fun setupHeaderActions() {
         findViewById<View>(R.id.btnAdminNotifications).setOnClickListener {
-            Toast.makeText(this, "Admin notifications will be added later", Toast.LENGTH_SHORT).show()
+            tvAdminDashboardTitle.text = "Admin Notifications"
+            loadFragment(AdminNotificationFragment())
         }
+//        findViewById<View>(R.id.btnAdminNotifications).setOnClickListener {
+//            Toast.makeText(this, "Admin notifications will be added later", Toast.LENGTH_SHORT).show()
+//        }
 
         findViewById<View>(R.id.btnAdminSettings).setOnClickListener {
             Toast.makeText(this, "Admin settings will be added later", Toast.LENGTH_SHORT).show()
