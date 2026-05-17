@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -23,6 +24,8 @@ class MainActivity : AppCompatActivity() {
     lateinit var btnLogin: Button
     lateinit var btnSignup: Button
     lateinit var btnForgotPass: Button
+    lateinit var tvAppPolicy: TextView
+    lateinit var tvAboutApp: TextView
     lateinit var auth: FirebaseAuth
     lateinit var database: DatabaseReference
 
@@ -45,6 +48,8 @@ class MainActivity : AppCompatActivity() {
         btnLogin = findViewById<Button>(R.id.btnLogin)
         btnSignup = findViewById<Button>(R.id.btnSignup)
         btnForgotPass = findViewById<Button>(R.id.btnForgotPass)
+        tvAppPolicy = findViewById<TextView>(R.id.tvAppPolicy)
+        tvAboutApp = findViewById<TextView>(R.id.tvAboutApp)
 
         btnSignup.setOnClickListener {
             val intent = Intent(this, RoleRegisterActivity::class.java)
@@ -53,6 +58,14 @@ class MainActivity : AppCompatActivity() {
 
         btnLogin.setOnClickListener {
             loginUser()
+        }
+
+        tvAppPolicy.setOnClickListener {
+            showAppPolicyDialog()
+        }
+
+        tvAboutApp.setOnClickListener {
+            showAboutAppDialog()
         }
 
     }
@@ -113,5 +126,39 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this, "Login failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                 }
             }
+    }
+
+    private fun showAppPolicyDialog() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("App Policy")
+            .setMessage(
+                "FindTutor Policy\n\n" +
+                        "1. Students and tutors must provide accurate information.\n\n" +
+                        "2. Users must not post fake tuition requests or misleading tutor information.\n\n" +
+                        "3. Meetings should be arranged only for educational purposes.\n\n" +
+                        "4. Reviews must be honest and respectful.\n\n" +
+                        "5. Reports will be reviewed by the admin team, and necessary action may be taken.\n\n" +
+                        "6. Any abusive, fraudulent, or inappropriate activity may lead to account restriction."
+            )
+            .setPositiveButton("OK", null)
+            .show()
+    }
+
+    private fun showAboutAppDialog() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("About FindTutor")
+            .setMessage(
+                "FindTutor is a tuition management platform that helps students find tutors and allows tutors to connect with students.\n\n" +
+                        "Main Features:\n\n" +
+                        "• Student and tutor registration\n" +
+                        "• Tutor interest system\n" +
+                        "• Meeting setup\n" +
+                        "• Reviews and ratings\n" +
+                        "• Problem reporting\n" +
+                        "• Admin investigation and notification system\n\n" +
+                        "Version: 1.0"
+            )
+            .setPositiveButton("OK", null)
+            .show()
     }
 }

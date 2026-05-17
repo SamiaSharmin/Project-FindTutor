@@ -84,7 +84,9 @@ class AdminDashboard : AppCompatActivity() {
 //        }
 
         findViewById<View>(R.id.btnAdminSettings).setOnClickListener {
-            Toast.makeText(this, "Admin settings will be added later", Toast.LENGTH_SHORT).show()
+            tvAdminDashboardTitle.text = "Admin Settings"
+            loadFragment(AdminSettingsFragment())
+            //Toast.makeText(this, "Admin settings will be added later", Toast.LENGTH_SHORT).show()
         }
     }
 }
