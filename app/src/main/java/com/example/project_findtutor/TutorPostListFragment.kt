@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.auth.FirebaseAuth
@@ -53,9 +54,13 @@ class TutorPostListFragment : Fragment(R.layout.fragment_tutor_post_list) {
                             postList.add(post)
                         }
                     }
-                    recyclerView.adapter = TutorPostAdapter(postList){post->
-                        markInterested(post)
-                    }
+                    recyclerView.adapter = TutorPostAdapter( postList,
+                        onInterestedClick = { post ->
+                            markInterested(post)
+                        },
+                        onDetailsClick = { post ->
+                            showStudentAndPostDetails(post)
+                        })
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -133,34 +138,68 @@ class TutorPostListFragment : Fragment(R.layout.fragment_tutor_post_list) {
             }
     }
 
-//    fun markInterested(post:Post){
-//        val tutorId = auth.currentUser?.uid ?: return
-//        val studentId = post.userId
-//
-//        db.child("Tutors").child(tutorId).get()
-//            .addOnSuccessListener { snapshot ->
-//                val tutorName = snapshot.child("name").value.toString()
-//
-//                db.child("interests").child(post.jobId.toString()).child(tutorId).get().addOnSuccessListener {
-//                    if(it.exists()){
-//                        Toast.makeText(requireContext(), "Already marked interested", Toast.LENGTH_SHORT).show()
-//                        return@addOnSuccessListener
-//                    }else{
-//                        val notification = mapOf("jobId" to post.jobId, "tutorId" to tutorId, "tutorName" to tutorName, "timestamp" to System.currentTimeMillis(), "isRead" to false)
-//
-//                        db.child("Notifications").child(studentId).push().setValue(notification)
-//                        Toast.makeText(requireContext(), "Interested sent", Toast.LENGTH_SHORT).show()
-//                    }
-//                }
-//
-//
-//            }
-////        db.child("interests").child(post.jobId.toString()).child(tutorId)
-////            .setValue(true).addOnSuccessListener {
-////                Toast.makeText(requireContext(), "Interested marked", Toast.LENGTH_SHORT).show()
-////            }.addOnFailureListener {
-////                Toast.makeText(requireContext(), "Failed to mark interested", Toast.LENGTH_SHORT).show()
-////            }
-//    }
+    private fun showStudentAndPostDetails(post: Post) {
+        val studentId = post.userId
+
+        if (studentId.isBlank()) {
+            Toast.makeText(requireContext(), "Student ID not found", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        db.child("Students").child(studentId).get()
+            .addOnSuccessListener { snapshot ->
+
+                val studentName = getSnapshotText(snapshot, "name")
+                val studentPhone = getSnapshotText(snapshot, "phoneNumber", "phone", "mobile")
+                val studentLocation = getSnapshotText(snapshot, "location", "address", "area")
+
+                val detailsMessage = buildString {
+                    append("Student Information\n")
+                    append("-------------------------\n")
+                    append("Name: ${studentName.ifBlank { "Not provided" }}\n")
+                    append("Phone Number: ${studentPhone.ifBlank { "Not provided" }}\n")
+
+                    if (studentLocation.isNotBlank()) {
+                        append("Location: $studentLocation\n")
+                    }
+
+                    append("\nPost Details\n")
+                    append("-------------------------\n")
+                    append("Job ID: ${post.jobId}\n")
+                    append("Title: ${post.title}\n")
+                    append("Subjects: ${post.subjects}\n")
+                    append("Location: ${post.location}\n")
+                    append("Student Class: ${post.studentClass}\n")
+                    append("Salary: ${post.salary} BDT\n")
+                    append("Description: ${post.description}\n")
+                    append("Student Gender: ${post.studentGender}\n")
+                    append("Prefered Gender: ${post.tutorGender}\n")
+                    append("Posted Date: ${post.postedDate}\n")
+                }
+
+                AlertDialog.Builder(requireContext())
+                    .setTitle("Job Details")
+                    .setMessage(detailsMessage)
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+            .addOnFailureListener { exception ->
+                Toast.makeText(
+                    requireContext(),
+                    "Failed to load details: ${exception.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+    }
+
+    private fun getSnapshotText(snapshot: DataSnapshot, vararg keys: String): String {
+        for (key in keys) {
+            val value = snapshot.child(key).value
+            if (value != null && value.toString().isNotBlank()) {
+                return value.toString()
+            }
+        }
+        return ""
+    }
 
 }

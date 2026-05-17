@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.recyclerview.widget.RecyclerView
 
-class TutorPostAdapter(private val list: List<Post>, private val onInterestedClick: (Post) -> Unit)
+class TutorPostAdapter(private val list: List<Post>, private val onInterestedClick: (Post) -> Unit, private val onDetailsClick: (Post) -> Unit)
     : RecyclerView.Adapter<TutorPostAdapter.ViewHolder>(){
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view){
@@ -44,7 +44,8 @@ class TutorPostAdapter(private val list: List<Post>, private val onInterestedCli
         }
 
         holder.btnDetails.setOnClickListener {
-            Toast.makeText(holder.itemView.context, "Details button clicked", Toast.LENGTH_SHORT).show()
+            onDetailsClick(post)
+            //Toast.makeText(holder.itemView.context, "Details button clicked", Toast.LENGTH_SHORT).show()
         }
     }
 }
