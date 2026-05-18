@@ -228,7 +228,6 @@
 
     </LinearLayout>
 
-    <!-- Meetings List -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvAdminMeetings"
         android:layout_width="0dp"

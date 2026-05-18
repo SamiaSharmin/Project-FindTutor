@@ -173,7 +173,7 @@ class TutorPostListFragment : Fragment(R.layout.fragment_tutor_post_list) {
                     append("Salary: ${post.salary} BDT\n")
                     append("Description: ${post.description}\n")
                     append("Student Gender: ${post.studentGender}\n")
-                    append("Prefered Gender: ${post.tutorGender}\n")
+                    append("Preferred Gender: ${post.tutorGender}\n")
                     append("Posted Date: ${post.postedDate}\n")
                 }
 

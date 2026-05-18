@@ -3,177 +3,191 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    app:cardCornerRadius="16dp"
-    app:cardBackgroundColor="#CC6D7AA9"
-    app:cardElevation="2dp"
-    android:layout_marginBottom="16dp">
+    android:layout_marginStart="4dp"
+    android:layout_marginEnd="4dp"
+    android:layout_marginBottom="16dp"
+    app:cardBackgroundColor="#FFFFFF"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="5dp"
+    app:cardUseCompatPadding="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="18dp">
 
         <TextView
             android:id="@+id/tvJobTitle"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="14dp"
             android:text="Need English Medium(Ed Excel) Tutor"
-            android:textColor="#000000"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="12dp"/>
+            android:textColor="#1E293B"
+            android:textSize="17sp"
+            android:textStyle="bold" />
 
         <GridLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:columnCount="2"
-            android:layout_marginBottom="12dp">
+            android:layout_marginBottom="16dp"
+            android:columnCount="2">
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_columnWeight="1"
+                android:layout_marginEnd="8dp"
                 android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/tvJobId"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="10dp"
                     android:text="Job ID\n1001"
-                    android:textColor="#000000"
+                    android:textColor="#334155"
                     android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="4dp"/>
+                    android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Location"
-                    android:textColor="#000000"
-                    android:textSize="14sp"
-                    android:textStyle="bold"/>
-
+                    android:textColor="#64748B"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tvLocation"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Dhanmondi,Dhaka"
-                    android:textColor="#0A4D90"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="10dp"
+                    android:text="Dhanmondi, Dhaka"
+                    android:textColor="#2563EB"
                     android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="4dp"/>
+                    android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Salary"
-                    android:textColor="#000000"
-                    android:textSize="14sp"
-                    android:textStyle="bold"/>
-
+                    android:textColor="#64748B"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tvSalary"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="4000BDT"
-                    android:textColor="#0A4D90"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="4dp"/>
-
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="10dp"
+                    android:text="4000 BDT"
+                    android:textColor="#16A34A"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tvPreferredTutor"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Any tutor preferred"
-                    android:textColor="#000000"
+                    android:textColor="#475569"
                     android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="4dp"/>
+                    android:textStyle="bold" />
+
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_columnWeight="1"
+                android:layout_marginStart="8dp"
                 android:orientation="vertical">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Posted Date"
-                    android:textColor="#000000"
-                    android:textSize="14sp"
-                    android:textStyle="bold"/>
+                    android:textColor="#64748B"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tvPostedDate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="11 May,2026 2:00pm"
-                    android:textColor="#0A4D90"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="10dp"
+                    android:text="11 May, 2026 2:00pm"
+                    android:textColor="#2563EB"
                     android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="4dp"/>
+                    android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Subjects"
-                    android:textColor="#000000"
-                    android:textSize="14sp"
-                    android:textStyle="bold"/>
-
+                    android:textColor="#64748B"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tvSubjects"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="English,Bangla,xxxxxx"
-                    android:textColor="#0A4D90"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="10dp"
+                    android:text="English, Bangla, xxxxxx"
+                    android:textColor="#7C3AED"
                     android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="4dp"/>
+                    android:textStyle="bold" />
 
             </LinearLayout>
+
         </GridLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginBottom="14dp"
+            android:background="#E2E8F0" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="center"
             android:orientation="horizontal">
 
             <Button
                 android:id="@+id/btnEdit"
                 android:layout_width="0dp"
-                android:layout_height="50dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="8dp"
                 android:layout_weight="1"
+                android:backgroundTint="#EEF2FF"
                 android:text="Edit"
-                android:textColor="#FFFFFF"
+                android:textAllCaps="false"
+                android:textColor="#4338CA"
                 android:textSize="14sp"
-                android:textStyle="bold"
-                android:textAllCaps="true"
-                android:background="#D8E43167"
-                android:layout_marginEnd="8dp"/>
+                android:textStyle="bold" />
 
             <Button
                 android:id="@+id/btnDelete"
                 android:layout_width="0dp"
-                android:layout_height="50dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="8dp"
                 android:layout_weight="1"
+                android:backgroundTint="#FEE2E2"
                 android:text="Delete"
-                android:textColor="#FFFFFF"
+                android:textAllCaps="false"
+                android:textColor="#B91C1C"
                 android:textSize="14sp"
-                android:textStyle="bold"
-                android:textAllCaps="true"
-                android:background="#D8E43167"
-                android:layout_marginEnd="8dp"/>
+                android:textStyle="bold" />
 
         </LinearLayout>
+
     </LinearLayout>
 
 </androidx.cardview.widget.CardView>
